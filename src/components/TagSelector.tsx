@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Form, Badge, Button, Modal, Row, Col } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
-import { getUserTags, createTag, deleteTag, suggestTags, TAG_COLORS } from '../services/tagService';
+import { getUserTags, createTag, suggestTags, TAG_COLORS } from '../services/tagService';
 import { useNotifications } from './NotificationSystem';
 import type { Tag } from '../types';
 
