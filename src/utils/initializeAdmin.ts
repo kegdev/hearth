@@ -35,5 +35,5 @@ export const setupAdminProfile = async (uid: string, email: string, displayName?
  * Check if admin initialization is needed
  */
 export const isAdminInitializationNeeded = (email: string): boolean => {
-  return email === '[admin_email]';
+  return email === import.meta.env.VITE_ADMIN_EMAIL;
 };

@@ -36,7 +36,7 @@ const AppNavbar = () => {
               <>
                 <Nav.Link as={Link} to="/containers">Containers</Nav.Link>
                 <Nav.Link as={Link} to="/items">Items</Nav.Link>
-                {user.email === '[admin_email]' && (
+                {user.email === import.meta.env.VITE_ADMIN_EMAIL && (
                   <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">
                     🛡️ Admin
                   </Nav.Link>

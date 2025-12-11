@@ -6,7 +6,7 @@ const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // Admin email configuration
-const ADMIN_EMAIL = '[admin_email]';
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 const ADMIN_NAME = 'Admin';
 
 // Prevent duplicate emails within 30 seconds
