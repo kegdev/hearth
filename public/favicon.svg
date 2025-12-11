@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- House shape matching 🏠 emoji colors -->
+  <defs>
+    <linearGradient id="houseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D2691E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0522D;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="roofGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle for better visibility -->
+  <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e9ecef" stroke-width="2"/>
+  
+  <!-- House base -->
+  <rect x="22" y="47" width="56" height="36" fill="url(#houseGradient)" rx="3"/>
+  
+  <!-- House roof -->
+  <polygon points="18,47 50,20 82,47" fill="url(#roofGradient)"/>
+  
+  <!-- Door -->
+  <rect x="43" y="62" width="14" height="21" fill="#8B4513" rx="2"/>
+  <circle cx="53" cy="72" r="1.5" fill="#FFD700"/>
+  
+  <!-- Windows -->
+  <rect x="28" y="54" width="9" height="9" fill="#87CEEB" rx="1"/>
+  <rect x="63" y="54" width="9" height="9" fill="#87CEEB" rx="1"/>
+  
+  <!-- Window details -->
+  <line x1="32.5" y1="54" x2="32.5" y2="63" stroke="#4682B4" stroke-width="0.8"/>
+  <line x1="28" y1="58.5" x2="37" y2="58.5" stroke="#4682B4" stroke-width="0.8"/>
+  <line x1="67.5" y1="54" x2="67.5" y2="63" stroke="#4682B4" stroke-width="0.8"/>
+  <line x1="63" y1="58.5" x2="72" y2="58.5" stroke="#4682B4" stroke-width="0.8"/>
+  
+  <!-- Chimney -->
+  <rect x="66" y="28" width="7" height="19" fill="#696969" rx="1"/>
+</svg>

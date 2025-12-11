@@ -1,0 +1,91 @@
+/* Dark Mode Theme Styles */
+
+/* Ensure smooth transitions when switching themes */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Dark mode body styles */
+[data-bs-theme="dark"] body {
+  background-color: #212529 !important;
+  color: #f8f9fa !important;
+}
+
+/* Dark mode card styles */
+[data-bs-theme="dark"] .card {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Dark mode modal styles */
+[data-bs-theme="dark"] .modal-content {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Dark mode form controls */
+[data-bs-theme="dark"] .form-control {
+  background-color: #495057;
+  border-color: #6c757d;
+  color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .form-control:focus {
+  background-color: #495057;
+  border-color: #86b7fe;
+  color: #f8f9fa;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Dark mode text colors */
+[data-bs-theme="dark"] .text-muted {
+  color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .text-primary {
+  color: #86b7fe !important;
+}
+
+[data-bs-theme="dark"] .text-success {
+  color: #75b798 !important;
+}
+
+/* Dark mode breadcrumb */
+[data-bs-theme="dark"] .breadcrumb {
+  background-color: transparent;
+}
+
+[data-bs-theme="dark"] .breadcrumb-item a {
+  color: #86b7fe;
+}
+
+/* Dark mode spinner */
+[data-bs-theme="dark"] .spinner-border {
+  color: #86b7fe;
+}
+
+/* Light mode overrides (ensure proper light theme) */
+[data-bs-theme="light"] body {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-bs-theme="light"] .card {
+  background-color: #ffffff;
+  border-color: #dee2e6;
+  color: #212529;
+}
+
+/* Dark mode footer */
+[data-bs-theme="dark"] footer {
+  background-color: #343a40 !important;
+  border-color: #495057 !important;
+}
+
+/* Light mode footer */
+[data-bs-theme="light"] footer {
+  background-color: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+}

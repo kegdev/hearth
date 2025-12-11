@@ -1,0 +1,224 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == '[admin_email]';
+    }
+    
+    function isValidContainer(container) {
+      return container.keys().hasAll(['name', 'userId', 'createdAt', 'updatedAt']) &&
+             container.name is string &&
+             container.name.size() > 0 &&
+             container.name.size() <= 100 &&
+             container.userId is string &&
+             container.userId == request.auth.uid &&
+             container.createdAt is timestamp &&
+             container.updatedAt is timestamp &&
+             (container.description == null || 
+              (container.description is string && container.description.size() <= 500)) &&
+             (container.location == null || 
+              (container.location is string && container.location.size() <= 100));
+    }
+    
+    function isValidItem(item) {
+      return item.keys().hasAll(['name', 'containerId', 'userId', 'createdAt', 'updatedAt']) &&
+             item.name is string &&
+             item.name.size() > 0 &&
+             item.name.size() <= 100 &&
+             item.containerId is string &&
+             item.userId is string &&
+             item.userId == request.auth.uid &&
+             item.createdAt is timestamp &&
+             item.updatedAt is timestamp &&
+             (item.description == null || 
+              (item.description is string && item.description.size() <= 1000)) &&
+             (item.imageUrl == null || item.imageUrl is string) &&
+             (item.tags == null || item.tags is list) &&
+             (item.categoryId == null || item.categoryId is string) &&
+             // Advanced properties validation
+             (item.purchasePrice == null || item.purchasePrice is number) &&
+             (item.currentValue == null || item.currentValue is number) &&
+             (item.purchaseDate == null || item.purchaseDate is timestamp) &&
+             (item.condition == null || 
+              (item.condition is string && item.condition in ['new', 'excellent', 'good', 'fair', 'poor'])) &&
+             (item.warranty == null || 
+              (item.warranty is string && item.warranty.size() <= 200)) &&
+             (item.serialNumber == null || 
+              (item.serialNumber is string && item.serialNumber.size() <= 100)) &&
+             (item.model == null || 
+              (item.model is string && item.model.size() <= 100)) &&
+             (item.brand == null || 
+              (item.brand is string && item.brand.size() <= 100));
+    }
+    
+    function isValidItemUpdate(item) {
+      return item.updatedAt is timestamp &&
+             // Only validate fields that are present in the update
+             (!item.keys().hasAny(['name']) || (item.name is string && item.name.size() > 0 && item.name.size() <= 100)) &&
+             (!item.keys().hasAny(['description']) || item.description == null || (item.description is string && item.description.size() <= 1000)) &&
+             (!item.keys().hasAny(['imageUrl']) || item.imageUrl == null || item.imageUrl is string) &&
+             (!item.keys().hasAny(['tags']) || item.tags == null || item.tags is list) &&
+             (!item.keys().hasAny(['categoryId']) || item.categoryId == null || item.categoryId is string) &&
+             // Advanced properties validation for updates
+             (!item.keys().hasAny(['purchasePrice']) || item.purchasePrice == null || item.purchasePrice is number) &&
+             (!item.keys().hasAny(['currentValue']) || item.currentValue == null || item.currentValue is number) &&
+             (!item.keys().hasAny(['purchaseDate']) || item.purchaseDate == null || item.purchaseDate is timestamp) &&
+             (!item.keys().hasAny(['condition']) || item.condition == null || 
+              (item.condition is string && item.condition in ['new', 'excellent', 'good', 'fair', 'poor'])) &&
+             (!item.keys().hasAny(['warranty']) || item.warranty == null || 
+              (item.warranty is string && item.warranty.size() <= 200)) &&
+             (!item.keys().hasAny(['serialNumber']) || item.serialNumber == null || 
+              (item.serialNumber is string && item.serialNumber.size() <= 100)) &&
+             (!item.keys().hasAny(['model']) || item.model == null || 
+              (item.model is string && item.model.size() <= 100)) &&
+             (!item.keys().hasAny(['brand']) || item.brand == null || 
+              (item.brand is string && item.brand.size() <= 100));
+    }
+    
+    // Containers collection
+    match /containers/{containerId} {
+      // Users can read and list their own containers
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create containers for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       isValidContainer(request.resource.data);
+      
+      // Users can update their own containers
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       isValidContainer(request.resource.data) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Users can delete their own containers
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Items collection
+    match /items/{itemId} {
+      // Users can read and list their own items
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create items for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       isValidItem(request.resource.data);
+      
+      // Users can update their own items
+      allow update: if isOwner(resource.data.userId) && 
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.containerId == resource.data.containerId &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Users can delete their own items
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Tags collection
+    match /tags/{tagId} {
+      // Users can read and list their own tags
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create tags for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['name', 'color', 'userId', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0 &&
+                       request.resource.data.name.size() <= 50 &&
+                       request.resource.data.color is string &&
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own tags
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Users can delete their own tags
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Categories collection
+    match /categories/{categoryId} {
+      // Users can read and list their own categories
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create categories for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['name', 'path', 'userId', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0 &&
+                       request.resource.data.name.size() <= 50 &&
+                       request.resource.data.path is string &&
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own categories
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Users can delete their own categories
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Registration Requests collection (public write for new requests)
+    match /registrationRequests/{requestId} {
+      // Anyone can create a registration request
+      allow create: if request.resource.data.keys().hasAll(['email', 'reason', 'status', 'requestedAt', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.email is string &&
+                       request.resource.data.email.size() > 0 &&
+                       request.resource.data.reason is string &&
+                       request.resource.data.reason.size() > 0 &&
+                       request.resource.data.status == 'pending' &&
+                       request.resource.data.requestedAt is timestamp &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       (request.resource.data.displayName == null || 
+                        (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 100));
+      
+      // Users can read their own registration requests, admins can read all
+      allow read: if isAuthenticated() && 
+                     (resource.data.email == request.auth.token.email || isAdmin());
+      
+      // Only admins can update and delete registration requests
+      allow update, delete: if isAdmin();
+    }
+    
+    // User Profiles collection
+    match /userProfiles/{profileId} {
+      // Users can read their own profile, admins can read all
+      allow read: if isAuthenticated() && 
+                     (resource.data.uid == request.auth.uid || isAdmin());
+      
+      // Only admins can create user profiles (via admin approval)
+      allow create: if isAdmin() &&
+                       request.resource.data.keys().hasAll(['uid', 'email', 'status', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.uid is string &&
+                       request.resource.data.email is string &&
+                       request.resource.data.status in ['pending', 'approved', 'denied', 'admin'] &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Only admins can update user profiles
+      allow update: if isAdmin();
+      
+      // No one can delete user profiles (for audit trail)
+      allow delete: if false;
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
