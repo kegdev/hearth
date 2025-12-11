@@ -9,7 +9,7 @@ import {
 import { getUserContainers } from '../services/containerService';
 import { seedTestData, hasTestData } from '../utils/testDataSeeder';
 import { useNotifications } from '../components/NotificationSystem';
-import type { UserRegistrationRequest, Container } from '../types';
+import type { UserRegistrationRequest, Container as InventoryContainer } from '../types';
 
 const AdminDashboardPage = () => {
   const [requests, setRequests] = useState<UserRegistrationRequest[]>([]);
@@ -19,7 +19,7 @@ const AdminDashboardPage = () => {
   const [modalAction, setModalAction] = useState<'approve' | 'deny'>('approve');
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [containers, setContainers] = useState<Container[]>([]);
+  const [containers, setContainers] = useState<InventoryContainer[]>([]);
   const [seedingData, setSeedingData] = useState(false);
 
   const { user } = useAuthStore();
