@@ -62,7 +62,7 @@ const AdminDashboardPage = () => {
           `${selectedRequest.email} has been approved for access.`
         );
       } else {
-        await denyRegistrationRequest(selectedRequest.id, user.uid, reviewNotes);
+        await denyRegistrationRequest(selectedRequest.id);
         showSuccess(
           'Request Denied',
           `${selectedRequest.email} has been denied access. They can resubmit a new request if needed.`

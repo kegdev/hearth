@@ -84,19 +84,20 @@ const TagSelector = ({ selectedTags, onTagsChange, itemName, disabled }: TagSele
     }
   };
 
-  const handleDeleteTag = async (tagId: string) => {
-    if (!user) return;
-    
-    try {
-      await deleteTag(tagId);
-      setTags(prev => prev.filter(t => t.id !== tagId));
-      onTagsChange(selectedTags.filter(id => id !== tagId));
-      
-      showSuccess('Tag Deleted! 🗑️', 'Tag has been removed.');
-    } catch (err: any) {
-      showError('Oops!', 'Unable to delete tag. Please try again.');
-    }
-  };
+  // Note: Tag deletion functionality available but not currently exposed in UI
+  // const handleDeleteTag = async (tagId: string) => {
+  //   if (!user) return;
+  //   
+  //   try {
+  //     await deleteTag(tagId);
+  //     setTags(prev => prev.filter(t => t.id !== tagId));
+  //     onTagsChange(selectedTags.filter(id => id !== tagId));
+  //     
+  //     showSuccess('Tag Deleted! 🗑️', 'Tag has been removed.');
+  //   } catch (err: any) {
+  //     showError('Oops!', 'Unable to delete tag. Please try again.');
+  //   }
+  // };
 
   const handleSuggestionClick = (suggestionName: string) => {
     if (disabled) return;

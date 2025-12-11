@@ -146,7 +146,7 @@ export const deleteTag = async (tagId: string): Promise<void> => {
 };
 
 // Auto-suggest tags based on item name
-export const suggestTags = (itemName: string, existingTags: Tag[]): string[] => {
+export const suggestTags = (itemName: string, _existingTags: Tag[]): string[] => {
   const name = itemName.toLowerCase();
   const suggestions: string[] = [];
   

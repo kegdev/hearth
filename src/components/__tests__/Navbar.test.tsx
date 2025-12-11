@@ -47,8 +47,7 @@ describe('Navbar Component', () => {
 
     renderNavbar();
     
-    expect(screen.getByText('🏠')).toBeInTheDocument();
-    expect(screen.getByText('Hearth')).toBeInTheDocument();
+    expect(screen.getByText('🏠 Hearth')).toBeInTheDocument();
   });
 
   it('shows login button when user is not authenticated', () => {
@@ -135,7 +134,7 @@ describe('Navbar Component', () => {
 
     renderNavbar();
     
-    expect(screen.getByText('🛡️ Admin')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /admin/i })).toBeInTheDocument();
   });
 
   it('does not show admin link for regular users', () => {
@@ -152,7 +151,7 @@ describe('Navbar Component', () => {
 
     renderNavbar();
     
-    expect(screen.queryByText('🛡️ Admin')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /admin/i })).not.toBeInTheDocument();
   });
 
   it('shows navigation links when authenticated', () => {
