@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
-import { getUserItems, deleteItem, updateItem } from '../services/itemService';
+import { getUserItems, deleteItem, updateItem, createItem } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
+import ImageUpload from '../components/ImageUpload';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
 import type { Item, Container as ContainerType, CreateItemData } from '../types';
@@ -24,8 +25,25 @@ const ItemsPage = () => {
   const [itemToEdit, setItemToEdit] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [editLoading, setEditLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [error, setError] = useState('');
   const [editFormData, setEditFormData] = useState<CreateItemData>({
+    name: '',
+    description: '',
+    containerId: '',
+    tags: [],
+    categoryId: undefined,
+    purchasePrice: undefined,
+    currentValue: undefined,
+    purchaseDate: undefined,
+    condition: undefined,
+    warranty: '',
+    serialNumber: '',
+    model: '',
+    brand: '',
+  });
+  const [addFormData, setAddFormData] = useState<CreateItemData>({
     name: '',
     description: '',
     containerId: '',
@@ -121,12 +139,11 @@ const ItemsPage = () => {
     try {
       await updateItem(itemToEdit.id, editFormData);
       
-      // Update the item in local state
-      setItems(prev => prev.map(item => 
-        item.id === itemToEdit.id 
-          ? { ...item, ...editFormData, updatedAt: new Date() }
-          : item
-      ));
+      // Refresh the items list to get the updated item with processed image
+      if (user) {
+        const updatedItems = await getUserItems(user.uid);
+        setItems(updatedItems);
+      }
       
       showSuccess(
         'Item Updated! ✏️', 
@@ -162,6 +179,49 @@ const ItemsPage = () => {
     }
   };
 
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !addFormData.containerId) return;
+    
+    setAddLoading(true);
+    setError('');
+
+    try {
+      const newItem = await createItem(user.uid, addFormData);
+      
+      // Add the item to local state
+      setItems(prev => [newItem, ...prev]);
+      
+      showSuccess(
+        'Item Added! 📦', 
+        `"${addFormData.name}" has been added to your inventory!`
+      );
+      
+      // Reset form and close modal
+      setAddFormData({
+        name: '',
+        description: '',
+        containerId: '',
+        tags: [],
+        categoryId: undefined,
+        purchasePrice: undefined,
+        currentValue: undefined,
+        purchaseDate: undefined,
+        condition: undefined,
+        warranty: '',
+        serialNumber: '',
+        model: '',
+        brand: '',
+      });
+      setShowAddModal(false);
+    } catch (err: any) {
+      setError(err.message);
+      showError('Oops!', 'Unable to add item. Please try again.');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
   const getCategoryById = (categoryId: string) => categories.find(c => c.id === categoryId);
 
@@ -171,7 +231,7 @@ const ItemsPage = () => {
         <Col>
           <div className="d-flex justify-content-between align-items-center">
             <h1>📋 My Items</h1>
-            <Button variant="primary">
+            <Button variant="primary" onClick={() => setShowAddModal(true)}>
               + Add Item
             </Button>
           </div>
@@ -355,6 +415,12 @@ const ItemsPage = () => {
               />
             </Form.Group>
 
+            <ImageUpload
+              onImageSelect={(file) => setEditFormData({ ...editFormData, image: file })}
+              currentImage={itemToEdit?.imageUrl}
+              disabled={editLoading}
+            />
+
             <Form.Group className="mb-3">
               <Form.Label>Container *</Form.Label>
               <Form.Select
@@ -526,6 +592,200 @@ const ItemsPage = () => {
             Delete Item
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Add Item Modal */}
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Item</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleAddSubmit}>
+          <Modal.Body>
+            {error && <Alert variant="danger">{error}</Alert>}
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Item Name *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g., Winter Jacket, Photo Album"
+                value={addFormData.name}
+                onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Optional description of this item"
+                value={addFormData.description}
+                onChange={(e) => setAddFormData({ ...addFormData, description: e.target.value })}
+              />
+            </Form.Group>
+
+            <ImageUpload
+              onImageSelect={(file) => setAddFormData({ ...addFormData, image: file })}
+              disabled={addLoading}
+            />
+
+            <Form.Group className="mb-3">
+              <Form.Label>Container *</Form.Label>
+              <Form.Select
+                value={addFormData.containerId}
+                onChange={(e) => setAddFormData({ ...addFormData, containerId: e.target.value })}
+                required
+              >
+                <option value="">Select a container...</option>
+                {containers.map((container) => (
+                  <option key={container.id} value={container.id}>
+                    {container.name} {container.location && `(${container.location})`}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <TagSelector
+              selectedTags={addFormData.tags || []}
+              onTagsChange={(tags) => setAddFormData({ ...addFormData, tags })}
+              itemName={addFormData.name}
+              disabled={addLoading}
+            />
+
+            <Form.Group className="mb-3">
+              <CategorySelector
+                selectedCategoryId={addFormData.categoryId}
+                onCategoryChange={(categoryId) => setAddFormData({ ...addFormData, categoryId })}
+                disabled={addLoading}
+              />
+            </Form.Group>
+
+            {/* Advanced Properties */}
+            <hr />
+            <h6 className="text-muted mb-3">📊 Value & Details (Optional)</h6>
+            
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Purchase Price</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={addFormData.purchasePrice?.toString() || ''}
+                    onChange={(e) => setAddFormData({ 
+                      ...addFormData, 
+                      purchasePrice: e.target.value && !isNaN(parseFloat(e.target.value)) ? parseFloat(e.target.value) : undefined 
+                    })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Current Value</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={addFormData.currentValue?.toString() || ''}
+                    onChange={(e) => setAddFormData({ 
+                      ...addFormData, 
+                      currentValue: e.target.value && !isNaN(parseFloat(e.target.value)) ? parseFloat(e.target.value) : undefined 
+                    })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Purchase Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={addFormData.purchaseDate ? addFormData.purchaseDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, purchaseDate: e.target.value ? new Date(e.target.value) : undefined })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Condition</Form.Label>
+                  <Form.Select
+                    value={addFormData.condition || ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, condition: e.target.value as any })}
+                  >
+                    <option value="">Select condition...</option>
+                    <option value="new">New</option>
+                    <option value="excellent">Excellent</option>
+                    <option value="good">Good</option>
+                    <option value="fair">Fair</option>
+                    <option value="poor">Poor</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Brand</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Apple, Samsung"
+                    value={addFormData.brand || ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, brand: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Model</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., iPhone 15, Galaxy S24"
+                    value={addFormData.model || ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, model: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Serial Number</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Serial or ID number"
+                    value={addFormData.serialNumber || ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, serialNumber: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Warranty Info</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., 2 years, expires 2025"
+                    value={addFormData.warranty || ''}
+                    onChange={(e) => setAddFormData({ ...addFormData, warranty: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={addLoading}>
+              {addLoading ? 'Creating...' : 'Create Item'}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
 
       {/* QR Code Modal */}

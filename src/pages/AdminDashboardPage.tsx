@@ -6,10 +6,8 @@ import {
   approveRegistrationRequest, 
   denyRegistrationRequest
 } from '../services/userRegistrationService';
-import { getUserContainers } from '../services/containerService';
-import { seedTestData, hasTestData } from '../utils/testDataSeeder';
 import { useNotifications } from '../components/NotificationSystem';
-import type { UserRegistrationRequest, Container as InventoryContainer } from '../types';
+import type { UserRegistrationRequest } from '../types';
 
 const AdminDashboardPage = () => {
   const [requests, setRequests] = useState<UserRegistrationRequest[]>([]);
@@ -19,8 +17,6 @@ const AdminDashboardPage = () => {
   const [modalAction, setModalAction] = useState<'approve' | 'deny'>('approve');
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [containers, setContainers] = useState<InventoryContainer[]>([]);
-  const [seedingData, setSeedingData] = useState(false);
 
   const { user } = useAuthStore();
   const { showSuccess, showError } = useNotifications();
@@ -28,7 +24,6 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     if (user) {
       loadPendingRequests();
-      loadContainers();
     }
   }, [user]);
 
@@ -45,34 +40,7 @@ const AdminDashboardPage = () => {
     }
   };
 
-  const loadContainers = async () => {
-    if (!user) return;
-    try {
-      const userContainers = await getUserContainers(user.uid);
-      setContainers(userContainers);
-    } catch (error) {
-      console.error('Error loading containers:', error);
-    }
-  };
 
-  const handleSeedTestData = async () => {
-    if (!user) return;
-    
-    setSeedingData(true);
-    try {
-      await seedTestData(user.uid);
-      await loadContainers(); // Refresh containers list
-      showSuccess(
-        'Test Data Created! 🌱',
-        'Successfully created a Kitchen Storage container with 8 sample items.'
-      );
-    } catch (error) {
-      console.error('Error seeding test data:', error);
-      showError('Error', 'Failed to create test data. Please try again.');
-    } finally {
-      setSeedingData(false);
-    }
-  };
 
   const handleActionClick = (request: UserRegistrationRequest, action: 'approve' | 'deny') => {
     setSelectedRequest(request);
@@ -159,46 +127,6 @@ const AdminDashboardPage = () => {
               )}
             </Button>
           </div>
-        </Col>
-      </Row>
-
-      {/* Test Data Section */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <h5 className="mb-0">🧪 Test Data Management</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6>Sample Container & Items</h6>
-                  <p className="text-muted mb-0">
-                    {hasTestData(containers) 
-                      ? '✅ Test data already exists in your inventory'
-                      : 'Create a sample "Kitchen Storage" container with 8 test items for demonstration'
-                    }
-                  </p>
-                </div>
-                <Button
-                  variant={hasTestData(containers) ? "outline-secondary" : "primary"}
-                  onClick={handleSeedTestData}
-                  disabled={seedingData || hasTestData(containers)}
-                >
-                  {seedingData ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Creating...
-                    </>
-                  ) : hasTestData(containers) ? (
-                    '✅ Test Data Exists'
-                  ) : (
-                    '🌱 Create Test Data'
-                  )}
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
         </Col>
       </Row>
 

@@ -66,7 +66,7 @@ export const createItem = async (
       name: data.name,
       description: data.description,
       containerId: data.containerId,
-      imageUrl,
+      imageUrl: imageUrl || null,
       tags: data.tags || [],
       categoryId: data.categoryId || null,
       // Advanced properties
@@ -226,7 +226,7 @@ export const getContainerItems = async (containerId: string, userId?: string): P
 
 export const updateItem = async (
   itemId: string,
-  data: Partial<Omit<CreateItemData, 'image'>>
+  data: Partial<CreateItemData>
 ): Promise<void> => {
   // If Firebase is not configured, just return (demo mode)
   if (!isFirebaseConfigured || !db) {
@@ -237,15 +237,32 @@ export const updateItem = async (
   try {
     const itemRef = doc(db, COLLECTION_NAME, itemId);
     
+    // Handle image processing if a new image is provided
+    let imageUrl: string | null | undefined;
+    if (data.image) {
+      // Check if it's a removal request
+      if (data.image.type === 'image/remove') {
+        imageUrl = null; // Remove the image
+      } else {
+        imageUrl = await compressAndConvertToBase64(data.image);
+      }
+    }
+    
     // Prepare update data with proper type conversions
     // Only include fields that are actually being updated
     const updateData: any = {
       updatedAt: Timestamp.fromDate(new Date())
     };
     
+    // Handle image update
+    if (data.image !== undefined) {
+      updateData.imageUrl = imageUrl !== undefined ? imageUrl : null;
+    }
+    
     // Copy basic fields only if they're being updated
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description || null;
+    if (data.containerId !== undefined) updateData.containerId = data.containerId;
     if (data.tags !== undefined) updateData.tags = data.tags || [];
     if (data.categoryId !== undefined) updateData.categoryId = data.categoryId || null;
     

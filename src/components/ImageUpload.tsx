@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, ProgressBar, Alert } from 'react-bootstrap';
 import { getImageDimensions } from '../utils/imageUtils';
 
@@ -13,6 +13,16 @@ const ImageUpload = ({ onImageSelect, currentImage, disabled }: ImageUploadProps
   const [imageInfo, setImageInfo] = useState<string>('');
   const [compressionProgress, setCompressionProgress] = useState<number>(0);
   const [isCompressing, setIsCompressing] = useState(false);
+
+  // Update preview when currentImage prop changes
+  useEffect(() => {
+    setPreview(currentImage || null);
+    if (currentImage) {
+      setImageInfo('Current image');
+    } else {
+      setImageInfo('');
+    }
+  }, [currentImage]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,6 +104,24 @@ const ImageUpload = ({ onImageSelect, currentImage, disabled }: ImageUploadProps
               border: '1px solid #dee2e6'
             }}
           />
+          {currentImage && (
+            <div className="mt-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => {
+                  setPreview(null);
+                  setImageInfo('');
+                  // Create a fake file to indicate removal
+                  const fakeFile = new File([''], 'remove-image', { type: 'image/remove' });
+                  onImageSelect(fakeFile);
+                }}
+                disabled={disabled}
+              >
+                Remove Image
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

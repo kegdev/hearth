@@ -708,6 +708,12 @@ const ContainerDetailPage = () => {
               />
             </Form.Group>
 
+            <ImageUpload
+              onImageSelect={(file) => setEditItemData({ ...editItemData, image: file })}
+              currentImage={itemToEdit?.imageUrl}
+              disabled={loading}
+            />
+
             <TagSelector
               selectedTags={editItemData.tags || []}
               onTagsChange={(tags) => setEditItemData({ ...editItemData, tags })}
