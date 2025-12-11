@@ -31,7 +31,7 @@ The Hearth app now implements enterprise-grade security with database-driven use
 
 ### **Admin Authentication Flow:**
 ```
-1. Admin logs in with borskaegel@gmail.com
+1. Admin logs in with [admin_email]
 2. AccountStatusGuard checks for user profile
 3. If no profile exists, auto-creates admin profile
 4. Admin profile has status: 'admin' and isAdmin: true
@@ -61,7 +61,7 @@ The Hearth app now implements enterprise-grade security with database-driven use
 ### **Admin Validation:**
 ```javascript
 function isAdmin() {
-  return isAuthenticated() && request.auth.token.email == 'borskaegel@gmail.com';
+  return isAuthenticated() && request.auth.token.email == '[admin_email]';
 }
 ```
 

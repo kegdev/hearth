@@ -236,10 +236,10 @@ VITE_EMAILJS_PUBLIC_KEY=user_def456
    - Try to access inventory without login → should redirect to registration request
    - Fill out registration request form
    - Verify form submission works
-   - Check admin email (borskaegel@gmail.com) for notification (if EmailJS configured)
+   - Check admin email ([admin_email]) for notification (if EmailJS configured)
 
 ### **Test Admin Functions:**
-1. Log in with your Firebase account (borskaegel@gmail.com)
+1. Log in with your Firebase account ([admin_email])
 2. Verify **🛡️ Admin** link appears in navigation menu
 3. Go to `https://hearth.keg.dev/admin` (or click the admin link)
 4. Verify you can see and approve registration requests

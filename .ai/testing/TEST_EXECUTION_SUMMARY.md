@@ -108,7 +108,7 @@ it('initializes admin profile for admin email', async () => {
   // Tests automatic admin profile setup
   expect(mockSetupAdminProfile).toHaveBeenCalledWith(
     'admin-uid',
-    'borskaegel@gmail.com',
+    '[admin_email]',
     'Admin User'
   );
 });

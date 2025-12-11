@@ -78,7 +78,7 @@ VITE_EMAILJS_PUBLIC_KEY=user_def456
 ### **Step 6: Test Email Notifications**
 1. **Restart your development server** after adding environment variables
 2. **Create a test user** (not admin) and request access
-3. **Check your email** (borskaegel@gmail.com) for the notification
+3. **Check your email** ([admin_email]) for the notification
 4. **Verify the admin dashboard link** works in the email
 
 ## 📋 Email Template Variables
@@ -86,7 +86,7 @@ VITE_EMAILJS_PUBLIC_KEY=user_def456
 The following variables are automatically populated in emails:
 
 ### **Admin Notification Variables:**
-- `{{to_email}}` - Admin email (borskaegel@gmail.com)
+- `{{to_email}}` - Admin email ([admin_email])
 - `{{to_name}}` - Admin name (Admin)
 - `{{user_email}}` - Requesting user's email
 - `{{user_name}}` - User's display name

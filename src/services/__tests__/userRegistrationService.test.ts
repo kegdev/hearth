@@ -98,7 +98,7 @@ describe('User Registration Service', () => {
   describe('denyRegistrationRequest', () => {
     it('handles denial in demo mode', async () => {
       await expect(
-        denyRegistrationRequest('demo-request-id', 'admin-uid', 'Not eligible')
+        denyRegistrationRequest('demo-request-id')
       ).resolves.not.toThrow();
     });
   });

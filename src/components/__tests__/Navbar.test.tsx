@@ -124,7 +124,7 @@ describe('Navbar Component', () => {
     mockUseAuthStore.mockReturnValue({
       user: { 
         uid: 'admin-uid', 
-        email: 'borskaegel@gmail.com',
+        email: '[admin_email]',
         displayName: 'Admin User'
       },
       login: jest.fn(),

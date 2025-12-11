@@ -31,7 +31,7 @@
 - ✅ **Security features**:
   - Firestore rules enforce admin-only access to approval interface
   - Email deduplication prevents notification spam
-  - Admin email validation (borskaegel@gmail.com hardcoded)
+  - Admin email validation ([admin_email] placeholder)
   - Proper permission handling for all database operations
 - ✅ **User experience**:
   - Clear registration request form with email prefill
