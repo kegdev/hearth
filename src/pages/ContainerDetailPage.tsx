@@ -347,7 +347,18 @@ const ContainerDetailPage = () => {
                 )}
                 {container.location && (
                   <div className="text-center text-sm-start">
-                    <Badge bg="secondary">📍 {container.location}</Badge>
+                    <Badge 
+                      bg="secondary" 
+                      className="text-wrap"
+                      style={{ 
+                        maxWidth: '100%',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        display: 'inline-block'
+                      }}
+                    >
+                      📍 {container.location}
+                    </Badge>
                   </div>
                 )}
               </div>
@@ -403,7 +414,15 @@ const ContainerDetailPage = () => {
                   />
                 )}
                 <Card.Body>
-                  <Card.Title>{item.name}</Card.Title>
+                  <Card.Title>
+                    <Link 
+                      to={`/item/${item.id}`}
+                      className="text-decoration-none text-body"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {item.name}
+                    </Link>
+                  </Card.Title>
                   {item.description && (
                     <Card.Text>{item.description}</Card.Text>
                   )}
