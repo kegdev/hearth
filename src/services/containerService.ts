@@ -10,6 +10,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase/config';
+import { compressAndConvertToBase64 } from '../utils/imageUtils';
 import type { Container, CreateContainerData } from '../types';
 
 const COLLECTION_NAME = 'containers';
@@ -21,10 +22,20 @@ export const createContainer = async (
   // If Firebase is not configured, return mock container (demo mode)
   if (!isFirebaseConfigured || !db) {
     console.log('📦 Demo mode: Container created locally');
+    let imageUrl: string | undefined;
+
+    // Still process image in demo mode for UI testing
+    if (data.image) {
+      imageUrl = await compressAndConvertToBase64(data.image);
+    }
+
     const now = new Date();
     return {
       id: `demo_${Date.now()}`,
-      ...data,
+      name: data.name,
+      description: data.description,
+      location: data.location,
+      imageUrl,
       userId,
       createdAt: now,
       updatedAt: now,
@@ -32,9 +43,19 @@ export const createContainer = async (
   }
 
   try {
+    let imageUrl: string | undefined;
+
+    // Compress and convert image to base64 if provided
+    if (data.image) {
+      imageUrl = await compressAndConvertToBase64(data.image);
+    }
+
     const now = new Date();
     const containerData = {
-      ...data,
+      name: data.name,
+      description: data.description || null,
+      location: data.location || null,
+      imageUrl: imageUrl || null,
       userId,
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
@@ -44,7 +65,10 @@ export const createContainer = async (
     
     return {
       id: docRef.id,
-      ...data,
+      name: data.name,
+      description: data.description,
+      location: data.location,
+      imageUrl,
       userId,
       createdAt: now,
       updatedAt: now,
@@ -79,6 +103,7 @@ export const getUserContainers = async (userId: string): Promise<Container[]> =>
         name: data.name,
         description: data.description,
         location: data.location,
+        imageUrl: data.imageUrl,
         userId: data.userId,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
@@ -108,10 +133,34 @@ export const updateContainer = async (
 
   try {
     const containerRef = doc(db, COLLECTION_NAME, containerId);
-    await updateDoc(containerRef, {
-      ...data,
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
+    
+    // Handle image processing if a new image is provided
+    let imageUrl: string | null | undefined;
+    if (data.image) {
+      // Check if it's a removal request
+      if (data.image.type === 'image/remove') {
+        imageUrl = null; // Remove the image
+      } else {
+        imageUrl = await compressAndConvertToBase64(data.image);
+      }
+    }
+    
+    // Prepare update data with proper type conversions
+    const updateData: any = {
+      updatedAt: Timestamp.fromDate(new Date())
+    };
+    
+    // Handle image update
+    if (data.image !== undefined) {
+      updateData.imageUrl = imageUrl !== undefined ? imageUrl : null;
+    }
+    
+    // Copy basic fields only if they're being updated
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description || null;
+    if (data.location !== undefined) updateData.location = data.location || null;
+    
+    await updateDoc(containerRef, updateData);
   } catch (error) {
     console.error('Error updating container:', error);
     throw new Error('Failed to update container');

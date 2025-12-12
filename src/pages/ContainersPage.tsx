@@ -6,6 +6,7 @@ import { createContainer, getUserContainers, deleteContainer, updateContainer } 
 import { getUserItems } from '../services/itemService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
+import ImageUpload from '../components/ImageUpload';
 import type { Container as ContainerType, CreateContainerData } from '../types';
 
 const ContainersPage = () => {
@@ -146,12 +147,22 @@ const ContainersPage = () => {
     try {
       await updateContainer(containerToEdit.id, editFormData);
       
-      // Update the container in the local state
-      setContainers(prev => prev.map(container => 
-        container.id === containerToEdit.id 
-          ? { ...container, ...editFormData, updatedAt: new Date() }
-          : container
-      ));
+      // Refresh the containers list to get the updated container with processed image
+      if (user) {
+        const [updatedContainers, userItems] = await Promise.all([
+          getUserContainers(user.uid),
+          getUserItems(user.uid)
+        ]);
+        
+        setContainers(updatedContainers);
+        
+        // Update item counts
+        const counts: Record<string, number> = {};
+        updatedContainers.forEach(container => {
+          counts[container.id] = userItems.filter(item => item.containerId === container.id).length;
+        });
+        setItemCounts(counts);
+      }
       
       showSuccess(
         'Container Updated! ✏️', 
@@ -239,6 +250,13 @@ const ContainersPage = () => {
           {containers.map((container) => (
             <Col md={6} lg={4} key={container.id} className="mb-4">
               <Card>
+                {container.imageUrl && (
+                  <Card.Img 
+                    variant="top" 
+                    src={container.imageUrl} 
+                    style={{ height: '200px', objectFit: 'cover' }} 
+                  />
+                )}
                 <Card.Body>
                   <Card.Title>{container.name}</Card.Title>
                   {container.description && (
@@ -324,6 +342,11 @@ const ContainersPage = () => {
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
             </Form.Group>
+
+            <ImageUpload
+              onImageSelect={(file) => setFormData({ ...formData, image: file })}
+              disabled={loading}
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -376,6 +399,12 @@ const ContainersPage = () => {
                 onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
               />
             </Form.Group>
+
+            <ImageUpload
+              onImageSelect={(file) => setEditFormData({ ...editFormData, image: file })}
+              currentImage={containerToEdit?.imageUrl}
+              disabled={loading}
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>

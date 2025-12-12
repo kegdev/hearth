@@ -3,6 +3,7 @@ export interface Container {
   name: string;
   description?: string;
   location?: string;
+  imageUrl?: string;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -86,6 +87,7 @@ export interface CreateContainerData {
   name: string;
   description?: string;
   location?: string;
+  image?: File;
 }
 
 export interface CreateItemData {

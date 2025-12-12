@@ -11,7 +11,7 @@ import QRCodeModal from '../components/QRCodeModal';
 import ImageUpload from '../components/ImageUpload';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
-import type { Item, Container as ContainerType, CreateItemData } from '../types';
+import type { Item, Container as ContainerType, CreateItemData, CreateContainerData } from '../types';
 
 const ContainerDetailPage = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -45,7 +45,7 @@ const ContainerDetailPage = () => {
     model: '',
     brand: '',
   });
-  const [editContainerData, setEditContainerData] = useState({
+  const [editContainerData, setEditContainerData] = useState<CreateContainerData>({
     name: '',
     description: '',
     location: ''
@@ -171,8 +171,13 @@ const ContainerDetailPage = () => {
     try {
       await updateContainer(container.id, editContainerData);
       
-      // Update the container in local state
-      setContainer(prev => prev ? { ...prev, ...editContainerData, updatedAt: new Date() } : null);
+      // Refresh container data to get updated image
+      const [containers] = await Promise.all([
+        getUserContainers(user.uid)
+      ]);
+      
+      const updatedContainer = containers.find(c => c.id === container.id);
+      setContainer(updatedContainer || null);
       
       showSuccess(
         'Container Updated! ✏️', 
@@ -305,15 +310,30 @@ const ContainerDetailPage = () => {
             </ol>
           </nav>
           
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1>📦 {container.name}</h1>
-              {container.description && (
-                <p className="text-muted">{container.description}</p>
+          <div className="d-flex justify-content-between align-items-start">
+            <div className="d-flex gap-3 align-items-start">
+              {container.imageUrl && (
+                <img
+                  src={container.imageUrl}
+                  alt={container.name}
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #dee2e6'
+                  }}
+                />
               )}
-              {container.location && (
-                <Badge bg="secondary">📍 {container.location}</Badge>
-              )}
+              <div>
+                <h1>📦 {container.name}</h1>
+                {container.description && (
+                  <p className="text-muted">{container.description}</p>
+                )}
+                {container.location && (
+                  <Badge bg="secondary">📍 {container.location}</Badge>
+                )}
+              </div>
             </div>
             <div className="d-flex gap-2">
               <Button variant="outline-secondary" onClick={handleEditContainer}>
@@ -665,6 +685,12 @@ const ContainerDetailPage = () => {
                 onChange={(e) => setEditContainerData({ ...editContainerData, location: e.target.value })}
               />
             </Form.Group>
+
+            <ImageUpload
+              onImageSelect={(file) => setEditContainerData({ ...editContainerData, image: file })}
+              currentImage={container?.imageUrl}
+              disabled={loading}
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditContainerModal(false)}>
