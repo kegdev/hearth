@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Modal, Form, Alert } from 'react-bootstrap';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { createContainer, getUserContainers, deleteContainer, updateContainer } from '../services/containerService';
 import { getUserItems } from '../services/itemService';
@@ -251,11 +251,17 @@ const ContainersPage = () => {
             <Col md={6} lg={4} key={container.id} className="mb-4">
               <Card>
                 {container.imageUrl && (
-                  <Card.Img 
-                    variant="top" 
-                    src={container.imageUrl} 
-                    style={{ height: '200px', objectFit: 'cover' }} 
-                  />
+                  <Link to={`/container/${container.id}`} className="text-decoration-none">
+                    <Card.Img 
+                      variant="top" 
+                      src={container.imageUrl} 
+                      style={{ 
+                        height: '200px', 
+                        objectFit: 'cover',
+                        cursor: 'pointer'
+                      }} 
+                    />
+                  </Link>
                 )}
                 <Card.Body>
                   <Card.Title>{container.name}</Card.Title>

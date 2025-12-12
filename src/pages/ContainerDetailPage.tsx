@@ -311,7 +311,7 @@ const ContainerDetailPage = () => {
           </nav>
           
           <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
-            <div className="d-flex gap-3 align-items-start flex-grow-1">
+            <div className="d-flex gap-3 align-items-start" style={{ flex: '2' }}>
               {container.imageUrl && (
                 <img
                   src={container.imageUrl}
@@ -363,7 +363,7 @@ const ContainerDetailPage = () => {
                 )}
               </div>
             </div>
-            <div className="d-flex gap-2 w-100 w-lg-auto justify-content-center justify-content-lg-end">
+            <div className="d-flex gap-2 w-100 w-lg-auto justify-content-center justify-content-lg-end" style={{ flex: '1' }}>
               <Button 
                 variant="outline-secondary" 
                 onClick={handleEditContainer}
@@ -407,11 +407,17 @@ const ContainerDetailPage = () => {
             <Col md={6} lg={4} key={item.id} className="mb-4">
               <Card>
                 {item.imageUrl && (
-                  <Card.Img 
-                    variant="top" 
-                    src={item.imageUrl} 
-                    style={{ height: '200px', objectFit: 'cover' }} 
-                  />
+                  <Link to={`/item/${item.id}`} className="text-decoration-none">
+                    <Card.Img 
+                      variant="top" 
+                      src={item.imageUrl} 
+                      style={{ 
+                        height: '200px', 
+                        objectFit: 'cover',
+                        cursor: 'pointer'
+                      }} 
+                    />
+                  </Link>
                 )}
                 <Card.Body>
                   <Card.Title>
