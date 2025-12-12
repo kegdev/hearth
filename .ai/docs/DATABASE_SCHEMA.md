@@ -56,9 +56,10 @@ erDiagram
         string name "Container name (required, 1-100 chars)"
         string description "Optional description (max 500 chars)"
         string location "Optional location info (max 100 chars)"
-        string userId FK "Owner's Firebase Auth UID"
+        string imageUrl "Base64 encoded image or URL"
+        string userId FK "Owner's Firebase Auth ID"
         timestamp createdAt "Creation timestamp"
-        timestamp updatedAt "Last modification timestamp"
+     "
     }
 ```
 
@@ -69,6 +70,7 @@ erDiagram
   "name": "Kitchen Drawer #3",
   "description": "Top drawer next to the stove",
   "location": "Kitchen",
+  "imageUrl": "data:image/jpeg;base64,/9j/4AAQ...",
   "userId": "user_xyz789",
   "createdAt": "2024-12-11T10:30:00Z",
   "updatedAt": "2024-12-11T10:30:00Z"
