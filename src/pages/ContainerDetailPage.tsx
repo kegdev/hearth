@@ -310,12 +310,13 @@ const ContainerDetailPage = () => {
             </ol>
           </nav>
           
-          <div className="d-flex justify-content-between align-items-start">
-            <div className="d-flex gap-3 align-items-start">
+          <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+            <div className="d-flex gap-3 align-items-start flex-grow-1">
               {container.imageUrl && (
                 <img
                   src={container.imageUrl}
                   alt={container.name}
+                  className="d-none d-sm-block"
                   style={{
                     width: '120px',
                     height: '120px',
@@ -325,21 +326,45 @@ const ContainerDetailPage = () => {
                   }}
                 />
               )}
-              <div>
-                <h1>📦 {container.name}</h1>
+              {container.imageUrl && (
+                <img
+                  src={container.imageUrl}
+                  alt={container.name}
+                  className="d-block d-sm-none mx-auto mb-3"
+                  style={{
+                    width: '200px',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #dee2e6'
+                  }}
+                />
+              )}
+              <div className="flex-grow-1">
+                <h1 className="text-center text-sm-start">📦 {container.name}</h1>
                 {container.description && (
-                  <p className="text-muted">{container.description}</p>
+                  <p className="text-muted text-center text-sm-start">{container.description}</p>
                 )}
                 {container.location && (
-                  <Badge bg="secondary">📍 {container.location}</Badge>
+                  <div className="text-center text-sm-start">
+                    <Badge bg="secondary">📍 {container.location}</Badge>
+                  </div>
                 )}
               </div>
             </div>
-            <div className="d-flex gap-2">
-              <Button variant="outline-secondary" onClick={handleEditContainer}>
+            <div className="d-flex gap-2 w-100 w-lg-auto justify-content-center justify-content-lg-end">
+              <Button 
+                variant="outline-secondary" 
+                onClick={handleEditContainer}
+                className="flex-fill flex-lg-grow-0"
+              >
                 ✏️ Edit Container
               </Button>
-              <Button variant="primary" onClick={() => setShowModal(true)}>
+              <Button 
+                variant="primary" 
+                onClick={() => setShowModal(true)}
+                className="flex-fill flex-lg-grow-0"
+              >
                 + Add Item
               </Button>
             </div>
