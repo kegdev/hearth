@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
-import { getUserItems, updateItem } from '../services/itemService';
+import { getUserItems, updateItem, getItemById } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
@@ -55,16 +55,15 @@ const ItemDetailPage = () => {
     try {
       setLoading(true);
       
-      // Load all data in parallel
-      const [items, userContainers, userTags, userCategories] = await Promise.all([
-        getUserItems(user.uid),
+      // Load item directly by ID (works for shared container items)
+      const [currentItem, userContainers, userTags, userCategories] = await Promise.all([
+        getItemById(itemId),
         getUserContainers(user.uid),
         getUserTags(user.uid),
         getUserCategories(user.uid)
       ]);
       
-      const currentItem = items.find(i => i.id === itemId);
-      setItem(currentItem || null);
+      setItem(currentItem);
       setContainers(userContainers);
       setTags(userTags);
       setCategories(userCategories);

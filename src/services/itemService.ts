@@ -2,6 +2,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc,
@@ -216,6 +217,50 @@ export const getContainerItems = async (containerId: string): Promise<Item[]> =>
     console.error('Error fetching container items:', error);
     // Only throw for actual network/permission errors
     throw new Error('Unable to load items from this container. Please check your connection.');
+  }
+};
+
+/**
+ * Get a specific item by ID (works for owned and shared container items)
+ */
+export const getItemById = async (itemId: string): Promise<Item | null> => {
+  // If Firebase is not configured, return null (demo mode)
+  if (!isFirebaseConfigured || !db) {
+    console.log('📋 Demo mode: Item not found');
+    return null;
+  }
+
+  try {
+    const itemDoc = await getDoc(doc(db, COLLECTION_NAME, itemId));
+    
+    if (!itemDoc.exists()) {
+      return null;
+    }
+
+    const data = itemDoc.data();
+    return {
+      id: itemDoc.id,
+      name: data.name,
+      description: data.description,
+      containerId: data.containerId,
+      userId: data.userId,
+      imageUrl: data.imageUrl,
+      tags: data.tags || [],
+      categoryId: data.categoryId,
+      purchasePrice: data.purchasePrice,
+      currentValue: data.currentValue,
+      purchaseDate: data.purchaseDate?.toDate(),
+      condition: data.condition,
+      warranty: data.warranty,
+      serialNumber: data.serialNumber,
+      model: data.model,
+      brand: data.brand,
+      createdAt: data.createdAt.toDate(),
+      updatedAt: data.updatedAt.toDate()
+    };
+  } catch (error) {
+    console.error('Error fetching item by ID:', error);
+    throw new Error('Unable to load item. Please check your connection.');
   }
 };
 

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { logoutUser } from '../services/authService';
+import GlobalSearch from './GlobalSearch';
 
 const AppNavbar = () => {
   const { user, loading } = useAuthStore();
@@ -39,6 +40,22 @@ const AppNavbar = () => {
               </>
             )}
           </Nav>
+          
+          {/* Global Search - only show when user is logged in */}
+          {user && (
+            <>
+              {/* Desktop Search - takes available space between nav items and user controls */}
+              <div className="d-none d-lg-block flex-grow-1 mx-3" style={{ maxWidth: '500px' }}>
+                <GlobalSearch placeholder="Search containers and items..." />
+              </div>
+              
+              {/* Mobile Search - full width with proper spacing */}
+              <div className="d-lg-none w-100 my-3 px-2">
+                <GlobalSearch placeholder="Search containers and items..." />
+              </div>
+            </>
+          )}
+          
           <Nav className="ms-auto">
             {!loading && (
               user ? (

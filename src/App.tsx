@@ -24,6 +24,7 @@ const ContainersPage = lazy(() => import('./pages/ContainersPage'));
 const ContainerDetailPage = lazy(() => import('./pages/ContainerDetailPage'));
 const ItemsPage = lazy(() => import('./pages/ItemsPage'));
 const ItemDetailPage = lazy(() => import('./pages/ItemDetailPage'));
+const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'));
 
 // Loading component
 const PageLoader = () => (
@@ -112,6 +113,14 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <ItemDetailPage />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/search" 
+                            element={
+                              <ProtectedRoute>
+                                <SearchResultsPage />
                               </ProtectedRoute>
                             } 
                           />
