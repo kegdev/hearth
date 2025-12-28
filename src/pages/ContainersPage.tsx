@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { createContainer, getUserContainers, deleteContainer, updateContainer } from '../services/containerService';
 import { getUserContainerPermission } from '../services/containerSharingService';
 import { getContainerItems } from '../services/itemService';
+import { offlineCacheService } from '../services/offlineCacheService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
 import ImageUpload from '../components/ImageUpload';
@@ -73,9 +74,15 @@ const ContainersPage = () => {
           try {
             const containerItems = await getContainerItems(container.id);
             counts[container.id] = containerItems.length;
+            console.log(`📦 Container ${container.name} has ${containerItems.length} items`);
           } catch (error) {
             console.warn(`Error getting items for container ${container.id}:`, error);
-            counts[container.id] = 0;
+            // Try to get cached count if available
+            const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
+            counts[container.id] = cachedCount;
+            if (cachedCount > 0) {
+              console.log(`📦 Using cached count for ${container.name}: ${cachedCount} items`);
+            }
           }
         })
       );

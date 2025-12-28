@@ -85,14 +85,40 @@ const ContainerDetailPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load container details, items, tags, categories, and user permission in parallel
-      const [containers, containerItems, userTags, userCategories] = await Promise.all([
-        getUserContainers(user.uid),
-        getContainerItems(containerId), // Remove userId to get all items in container
-        getUserTags(user.uid),
-        getUserCategories(user.uid)
-      ]);
+      // Load critical data first (containers and items) - these have offline caching
+      let containers: any[] = [];
+      let containerItems: Item[] = [];
       
+      try {
+        containers = await getUserContainers(user.uid);
+      } catch (error) {
+        console.warn('Error loading containers:', error);
+      }
+      
+      try {
+        containerItems = await getContainerItems(containerId);
+        console.log(`📋 Loaded ${containerItems.length} items for container ${containerId}`);
+      } catch (error) {
+        console.warn('Error loading container items:', error);
+      }
+      
+      // Load non-critical data (tags and categories) - these might fail offline
+      let userTags: any[] = [];
+      let userCategories: any[] = [];
+      
+      try {
+        userTags = await getUserTags(user.uid);
+      } catch (error) {
+        console.warn('Error loading tags (offline?):', error);
+      }
+      
+      try {
+        userCategories = await getUserCategories(user.uid);
+      } catch (error) {
+        console.warn('Error loading categories (offline?):', error);
+      }
+      
+      // Set the loaded data
       const currentContainer = containers.find(c => c.id === containerId);
       setContainer(currentContainer || null);
       setItems(containerItems);
