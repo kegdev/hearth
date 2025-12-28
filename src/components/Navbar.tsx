@@ -15,11 +15,6 @@ const AppNavbar = () => {
     setUser(user?.uid || null);
   }, [user?.uid, setUser]);
 
-  // Debug effect to track theme changes
-  React.useEffect(() => {
-    console.log('Navbar: isDarkMode changed to:', isDarkMode);
-  }, [isDarkMode]);
-
   const handleLogout = async () => {
     await logoutUser();
   };

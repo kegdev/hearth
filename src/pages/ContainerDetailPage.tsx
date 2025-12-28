@@ -4,14 +4,16 @@ import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 're
 import { useAuthStore } from '../store/authStore';
 import { getContainerItems, createItem, deleteItem, updateItem } from '../services/itemService';
 import { getUserContainers, updateContainer } from '../services/containerService';
+import { getUserContainerPermission } from '../services/containerSharingService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
+import ShareContainerModal from '../components/ShareContainerModal';
 import ImageUpload from '../components/ImageUpload';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
-import type { Item, Container as ContainerType, CreateItemData, CreateContainerData } from '../types';
+import type { Item, Container as ContainerType, CreateItemData, CreateContainerData, SharePermission } from '../types';
 
 const ContainerDetailPage = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -19,10 +21,12 @@ const ContainerDetailPage = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [userPermission, setUserPermission] = useState<SharePermission | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showEditContainerModal, setShowEditContainerModal] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
@@ -81,7 +85,7 @@ const ContainerDetailPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load container details, items, tags, and categories in parallel
+      // Load container details, items, tags, categories, and user permission in parallel
       const [containers, containerItems, userTags, userCategories] = await Promise.all([
         getUserContainers(user.uid),
         getContainerItems(containerId, user.uid),
@@ -94,6 +98,18 @@ const ContainerDetailPage = () => {
       setItems(containerItems);
       setTags(userTags);
       setCategories(userCategories);
+      
+      // Get user permission separately with error handling
+      try {
+        const permission = await getUserContainerPermission(containerId, user.uid);
+        setUserPermission(permission);
+      } catch (error) {
+        console.warn('Error getting container permission:', error);
+        // Default to admin if user owns the container, null otherwise
+        const currentContainer = containers.find(c => c.id === containerId);
+        setUserPermission(currentContainer?.userId === user.uid ? 'admin' : null);
+      }
+      
       setError(''); // Clear any previous errors on successful load
     } catch (err: any) {
       console.error('Error loading container data:', err);
@@ -169,7 +185,7 @@ const ContainerDetailPage = () => {
     setError('');
 
     try {
-      await updateContainer(container.id, editContainerData);
+      await updateContainer(container.id, editContainerData, user.uid);
       
       // Refresh container data to get updated image
       const [containers] = await Promise.all([
@@ -364,20 +380,48 @@ const ContainerDetailPage = () => {
               </div>
             </div>
             <div className="d-flex gap-2 w-100 w-lg-auto justify-content-center justify-content-lg-end" style={{ flex: '1' }}>
-              <Button 
-                variant="outline-secondary" 
-                onClick={handleEditContainer}
-                className="flex-fill flex-lg-grow-0"
-              >
-                ✏️ Edit Container
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={() => setShowModal(true)}
-                className="flex-fill flex-lg-grow-0"
-              >
-                + Add Item
-              </Button>
+              {/* Share button - only show if user owns the container */}
+              {userPermission === 'admin' && (
+                <Button 
+                  variant="outline-info" 
+                  onClick={() => setShowShareModal(true)}
+                  className="flex-fill flex-lg-grow-0"
+                  title="Share this container with other users"
+                >
+                  <i className="bi bi-share"></i> Share
+                </Button>
+              )}
+              
+              {/* Edit button - show if user has edit or admin permission */}
+              {userPermission && userPermission !== 'view' && (
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={handleEditContainer}
+                  className="flex-fill flex-lg-grow-0"
+                >
+                  ✏️ Edit Container
+                </Button>
+              )}
+              
+              {/* Add item button - show if user has edit or admin permission */}
+              {userPermission && userPermission !== 'view' && (
+                <Button 
+                  variant="primary" 
+                  onClick={() => setShowModal(true)}
+                  className="flex-fill flex-lg-grow-0"
+                >
+                  + Add Item
+                </Button>
+              )}
+              
+              {/* View-only indicator */}
+              {userPermission === 'view' && (
+                <div className="d-flex align-items-center">
+                  <Badge bg="secondary" className="fs-6">
+                    <i className="bi bi-eye"></i> View Only
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         </Col>
@@ -941,6 +985,14 @@ const ContainerDetailPage = () => {
           url={`/item/${selectedItem.id}`}
         />
       )}
+
+      {/* Share Container Modal */}
+      <ShareContainerModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        containerId={containerId || ''}
+        containerName={container?.name || ''}
+      />
     </Container>
   );
 };

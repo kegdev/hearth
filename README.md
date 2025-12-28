@@ -15,6 +15,7 @@ Hearth is a comprehensive home inventory management system that helps you catalo
 ### ✨ Key Features
 
 - **📦 Container Management** - Organize items by location (rooms, boxes, shelves)
+- **🤝 Container Sharing** - Share containers with other users with granular permissions
 - **📝 Item Cataloging** - Detailed item records with photos and descriptions
 - **🏷️ Smart Tagging** - Flexible tagging system with auto-suggestions
 - **📱 QR Code Integration** - Generate and print QR codes for physical containers
@@ -222,8 +223,9 @@ See [GitHub Pages Deployment Guide](.ai/GITHUB_PAGES_DEPLOYMENT_COMPREHENSIVE.md
 
 ## 📊 Project Status
 
-### **Current Version**: Production Ready (v1.0)
+### **Current Version**: Production Ready (v1.1.0) - Container Sharing Release
 - ✅ **Core Features** - Complete inventory management system
+- ✅ **Container Sharing** - Multi-user collaboration with permission levels
 - ✅ **User Management** - Full approval workflow implemented
 - ✅ **Security** - Production-ready security measures
 - ✅ **Testing** - Comprehensive test suite (80%+ coverage)
@@ -231,12 +233,14 @@ See [GitHub Pages Deployment Guide](.ai/GITHUB_PAGES_DEPLOYMENT_COMPREHENSIVE.md
 - ✅ **Documentation** - Complete development and deployment guides
 
 ### **Recent Achievements**
-- 🎨 Enhanced UI with professional user icon and tooltips
-- 🔐 Implemented comprehensive user approval system
-- 📧 Added email notification system for admin alerts
-- 🧪 Created extensive test suite with 80%+ coverage
-- 📱 Optimized PWA functionality for mobile users
-- 🚀 Achieved 98% production readiness score
+- 🤝 **Container Sharing System** - Complete implementation with view/edit/admin permissions
+- 👥 **User Collaboration** - Share containers with other approved users
+- 🎨 **Visual Indicators** - Clear shared container identification and owner information
+- 🔐 **Enhanced Security** - Comprehensive Firestore rules for sharing permissions
+- 📧 **Email Notifications** - Admin alerts for registration requests
+- 🧪 **Extensive Testing** - 80%+ test coverage with comprehensive test suite
+- 📱 **PWA Optimization** - Enhanced mobile experience and offline functionality
+- 🚀 **Production Deployment** - Live at hearth.keg.dev with 98% readiness score
 
 ## 🤝 Contributing
 
@@ -259,10 +263,12 @@ See [GitHub Pages Deployment Guide](.ai/GITHUB_PAGES_DEPLOYMENT_COMPREHENSIVE.md
 ## 📚 Documentation
 
 ### **Available Guides**
+- **[Container Sharing System](.ai/features/CONTAINER_SHARING_SYSTEM.md)** - Complete sharing feature guide
 - **[Firebase Setup](.ai/FIREBASE_SETUP.md)** - Backend configuration guide
 - **[Deployment Guide](.ai/GITHUB_PAGES_DEPLOYMENT_COMPREHENSIVE.md)** - Production deployment
 - **[Testing Strategy](.ai/testing/TESTING_STRATEGY.md)** - Comprehensive testing approach
 - **[Security Audit](.ai/audits/PRODUCTION_SECURITY_AUDIT.md)** - Security assessment
+- **[Production Readiness](.ai/audits/PRODUCTION_READINESS_AUDIT_V4.md)** - Latest readiness audit
 - **[Feature Documentation](.ai/features/)** - Individual feature guides
 
 ### **API Documentation**

@@ -11,7 +11,8 @@ import {
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase/config';
 import { compressAndConvertToBase64 } from '../utils/imageUtils';
-import type { Container, CreateContainerData } from '../types';
+import { getSharedContainers, getUserContainerPermission } from './containerSharingService';
+import type { Container, CreateContainerData, SharedContainer, ContainerWithSharing } from '../types';
 
 const COLLECTION_NAME = 'containers';
 
@@ -79,7 +80,7 @@ export const createContainer = async (
   }
 };
 
-export const getUserContainers = async (userId: string): Promise<Container[]> => {
+export const getUserContainers = async (userId: string): Promise<ContainerWithSharing[]> => {
   // If Firebase is not configured, return empty array (demo mode)
   if (!isFirebaseConfigured || !db) {
     console.log('📦 Demo mode: No containers yet');
@@ -87,16 +88,15 @@ export const getUserContainers = async (userId: string): Promise<Container[]> =>
   }
 
   try {
-    // Try without orderBy first to see if that's the issue
-    const q = query(
+    // Get owned containers
+    const ownedQuery = query(
       collection(db, COLLECTION_NAME),
       where('userId', '==', userId)
     );
     
-    const querySnapshot = await getDocs(q);
+    const ownedSnapshot = await getDocs(ownedQuery);
     
-    // Return empty array if no containers found (not an error)
-    const containers = querySnapshot.docs.map((doc) => {
+    const ownedContainers: ContainerWithSharing[] = ownedSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -107,13 +107,41 @@ export const getUserContainers = async (userId: string): Promise<Container[]> =>
         userId: data.userId,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
+        isShared: false,
       };
     });
+
+    // Get shared containers - but handle errors gracefully
+    let sharedContainers: SharedContainer[] = [];
+    try {
+      sharedContainers = await getSharedContainers(userId);
+    } catch (error) {
+      console.warn('Error loading shared containers:', error);
+      // Continue with just owned containers if shared containers fail
+    }
+    
+    // Convert shared containers to ContainerWithSharing format
+    const sharedAsContainers: ContainerWithSharing[] = sharedContainers.map(shared => ({
+      id: shared.id,
+      name: shared.name,
+      description: shared.description,
+      location: shared.location,
+      imageUrl: shared.imageUrl,
+      userId: shared.userId, // Keep original owner ID
+      createdAt: shared.createdAt,
+      updatedAt: shared.updatedAt,
+      isShared: true,
+      sharedByName: shared.sharedByName,
+      sharePermission: shared.sharePermission,
+    }));
+    
+    // Combine owned and shared containers
+    const allContainers = [...ownedContainers, ...sharedAsContainers];
     
     // Sort by createdAt in JavaScript instead of Firestore
-    containers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    allContainers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     
-    return containers;
+    return allContainers;
   } catch (error) {
     console.error('Error fetching containers:', error);
     // Only throw for actual network/permission errors
@@ -123,7 +151,8 @@ export const getUserContainers = async (userId: string): Promise<Container[]> =>
 
 export const updateContainer = async (
   containerId: string,
-  data: Partial<CreateContainerData>
+  data: Partial<CreateContainerData>,
+  userId?: string
 ): Promise<void> => {
   // If Firebase is not configured, just return (demo mode)
   if (!isFirebaseConfigured || !db) {
@@ -132,6 +161,14 @@ export const updateContainer = async (
   }
 
   try {
+    // Check if user has permission to edit this container
+    if (userId) {
+      const permission = await getUserContainerPermission(containerId, userId);
+      if (!permission || permission === 'view') {
+        throw new Error('You do not have permission to edit this container');
+      }
+    }
+
     const containerRef = doc(db, COLLECTION_NAME, containerId);
     
     // Handle image processing if a new image is provided

@@ -292,10 +292,6 @@ export const updateItem = async (
       updateData.brand = data.brand || null;
     }
     
-    // Debug: Log the data being sent to Firestore
-    console.log('🔍 Updating item with data:', updateData);
-    console.log('🔍 Item ID:', itemId);
-    
     await updateDoc(itemRef, updateData);
   } catch (error) {
     console.error('Error updating item:', error);
