@@ -173,17 +173,12 @@ export const getContainerItems = async (containerId: string, userId?: string): P
   }
 
   try {
-    // Include userId in query for security rules
-    const q = userId 
-      ? query(
-          collection(db, COLLECTION_NAME),
-          where('containerId', '==', containerId),
-          where('userId', '==', userId)
-        )
-      : query(
-          collection(db, COLLECTION_NAME),
-          where('containerId', '==', containerId)
-        );
+    // For shared containers, we need to get all items in the container regardless of owner
+    // The application will handle permission checking
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('containerId', '==', containerId)
+    );
     
     const querySnapshot = await getDocs(q);
     

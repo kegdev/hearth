@@ -88,7 +88,7 @@ const ContainerDetailPage = () => {
       // Load container details, items, tags, categories, and user permission in parallel
       const [containers, containerItems, userTags, userCategories] = await Promise.all([
         getUserContainers(user.uid),
-        getContainerItems(containerId, user.uid),
+        getContainerItems(containerId), // Remove userId to get all items in container
         getUserTags(user.uid),
         getUserCategories(user.uid)
       ]);

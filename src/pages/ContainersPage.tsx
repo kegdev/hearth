@@ -4,7 +4,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { createContainer, getUserContainers, deleteContainer, updateContainer } from '../services/containerService';
 import { getUserContainerPermission } from '../services/containerSharingService';
-import { getUserItems } from '../services/itemService';
+import { getUserItems, getContainerItems } from '../services/itemService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
 import ImageUpload from '../components/ImageUpload';
@@ -62,19 +62,23 @@ const ContainersPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load containers and items in parallel
-      const [userContainers, userItems] = await Promise.all([
-        getUserContainers(user.uid),
-        getUserItems(user.uid)
-      ]);
-      
+      // Load containers first
+      const userContainers = await getUserContainers(user.uid);
       setContainers(userContainers);
       
-      // Count items per container
+      // Get item counts for each container (including shared containers)
       const counts: Record<string, number> = {};
-      userContainers.forEach(container => {
-        counts[container.id] = userItems.filter(item => item.containerId === container.id).length;
-      });
+      await Promise.all(
+        userContainers.map(async (container) => {
+          try {
+            const containerItems = await getContainerItems(container.id);
+            counts[container.id] = containerItems.length;
+          } catch (error) {
+            console.warn(`Error getting items for container ${container.id}:`, error);
+            counts[container.id] = 0;
+          }
+        })
+      );
       setItemCounts(counts);
       
       // Get permissions for each container - but handle errors gracefully
@@ -174,18 +178,22 @@ const ContainersPage = () => {
       
       // Refresh the containers list to get the updated container with processed image
       if (user) {
-        const [updatedContainers, userItems] = await Promise.all([
-          getUserContainers(user.uid),
-          getUserItems(user.uid)
-        ]);
-        
+        const updatedContainers = await getUserContainers(user.uid);
         setContainers(updatedContainers);
         
-        // Update item counts
+        // Update item counts for each container (including shared containers)
         const counts: Record<string, number> = {};
-        updatedContainers.forEach(container => {
-          counts[container.id] = userItems.filter(item => item.containerId === container.id).length;
-        });
+        await Promise.all(
+          updatedContainers.map(async (container) => {
+            try {
+              const containerItems = await getContainerItems(container.id);
+              counts[container.id] = containerItems.length;
+            } catch (error) {
+              console.warn(`Error getting items for container ${container.id}:`, error);
+              counts[container.id] = 0;
+            }
+          })
+        );
         setItemCounts(counts);
       }
       
