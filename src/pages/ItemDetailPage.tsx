@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
-import { getUserItems, updateItem, getItemById } from '../services/itemService';
+import { updateItem, getItemById } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
