@@ -4,7 +4,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { createContainer, getUserContainers, deleteContainer, updateContainer } from '../services/containerService';
 import { getUserContainerPermission } from '../services/containerSharingService';
-import { getUserItems, getContainerItems } from '../services/itemService';
+import { getContainerItems } from '../services/itemService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
 import ImageUpload from '../components/ImageUpload';

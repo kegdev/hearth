@@ -165,7 +165,7 @@ export const getUserItems = async (userId: string): Promise<Item[]> => {
   }
 };
 
-export const getContainerItems = async (containerId: string, userId?: string): Promise<Item[]> => {
+export const getContainerItems = async (containerId: string): Promise<Item[]> => {
   // If Firebase is not configured, return empty array (demo mode)
   if (!isFirebaseConfigured || !db) {
     console.log('📋 Demo mode: No items in container yet');
