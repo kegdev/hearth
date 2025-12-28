@@ -147,15 +147,6 @@ const ShareContainerModal = ({ show, onHide, containerId, containerName }: Share
     }
   };
 
-  const getPermissionBadgeVariant = (permission: SharePermission) => {
-    switch (permission) {
-      case 'view': return 'secondary';
-      case 'edit': return 'primary';
-      case 'admin': return 'success';
-      default: return 'secondary';
-    }
-  };
-
   return (
     <Modal show={show} onHide={onHide} size="lg" className="bg-body">
       <Modal.Header closeButton className="bg-light border-bottom">

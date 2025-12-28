@@ -26,7 +26,8 @@ describe('User Registration Service', () => {
   const mockUserData = {
     email: 'test@example.com',
     displayName: 'Test User',
-    reason: 'I want to organize my home inventory'
+    reason: 'I want to organize my home inventory',
+    uid: 'test-user-uid-123'
   };
 
   describe('submitRegistrationRequest', () => {
@@ -60,7 +61,8 @@ describe('User Registration Service', () => {
     it('handles missing display name', async () => {
       const dataWithoutName = {
         email: 'test@example.com',
-        reason: 'Testing'
+        reason: 'Testing',
+        uid: 'test-user-uid-456'
       };
       
       const result = await submitRegistrationRequest(dataWithoutName);
@@ -199,7 +201,8 @@ describe('User Registration Service', () => {
       // Test that the service doesn't crash on errors
       const invalidData = {
         email: '',
-        reason: ''
+        reason: '',
+        uid: 'invalid-uid'
       };
       
       // Should not throw in demo mode
@@ -214,7 +217,8 @@ describe('User Registration Service', () => {
       const dataWithSpaces = {
         email: '  test@example.com  ',
         displayName: '  Test User  ',
-        reason: '  Testing with spaces  '
+        reason: '  Testing with spaces  ',
+        uid: 'test-user-uid-789'
       };
       
       const result = await submitRegistrationRequest(dataWithSpaces);
