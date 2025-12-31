@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { getUserItems, deleteItem, updateItem, createItem } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
@@ -375,12 +376,18 @@ const ItemsPage = () => {
             <Col md={6} lg={4} key={item.id} className="mb-4">
               <Card>
                 {item.imageUrl && (
-                  <Card.Img 
-                    variant="top" 
-                    src={item.imageUrl}
-                    loading="lazy"
-                    style={{ height: '200px', objectFit: 'cover' }} 
-                  />
+                  <Link to={`/item/${item.id}`} className="text-decoration-none">
+                    <Card.Img 
+                      variant="top" 
+                      src={item.imageUrl}
+                      loading="lazy"
+                      style={{ 
+                        height: '200px', 
+                        objectFit: 'cover',
+                        cursor: 'pointer'
+                      }} 
+                    />
+                  </Link>
                 )}
                 <Card.Body>
                   <Card.Title>{item.name}</Card.Title>
