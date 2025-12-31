@@ -61,7 +61,7 @@ const InventoryStats = () => {
   }
 
   return (
-    <footer className="border-top py-4 mt-auto" style={{ backgroundColor: 'var(--bs-light)' }}>
+    <footer className="border-top py-4 mt-auto bg-light">
       <Container>
         <Row className="text-center">
           <Col xs={6} md={3} className="mb-2 mb-md-0">

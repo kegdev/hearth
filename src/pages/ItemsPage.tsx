@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { getUserItems, deleteItem, updateItem, createItem } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
@@ -21,6 +21,7 @@ const ItemsPage = () => {
   
   // PERFORMANCE OPTIMIZATION: Search and Pagination State
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState<string>(''); // For tag-specific filtering
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24; // Show 24 items per page for optimal performance
   
@@ -68,6 +69,8 @@ const ItemsPage = () => {
 
   const { user } = useAuthStore();
   const { showSuccess, showError } = useNotifications();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Helper functions for filtering (must be declared before filtering logic)
   const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
@@ -79,6 +82,12 @@ const ItemsPage = () => {
 
   // PERFORMANCE OPTIMIZATION: Filter and paginate items
   const filteredItems = items.filter(item => {
+    // First apply tag filter if selected
+    if (selectedTagId && (!item.tags || !item.tags.includes(selectedTagId))) {
+      return false;
+    }
+    
+    // Then apply text search if provided
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -107,10 +116,28 @@ const ItemsPage = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset to page 1 when search changes
+  // Reset to page 1 when search or tag filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedTagId]);
+
+  // Handle URL search parameters (for tag cloud navigation and general search)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const searchParam = urlParams.get('search');
+    const tagIdParam = urlParams.get('tagId');
+    
+    if (searchParam) {
+      setSearchTerm(searchParam);
+      setSelectedTagId(''); // Clear tag filter when doing text search
+    } else if (tagIdParam) {
+      setSelectedTagId(tagIdParam);
+      setSearchTerm(''); // Clear text search when filtering by tag
+    }
+    
+    // Clean up URL by removing the parameters
+    navigate('/items', { replace: true });
+  }, [location.search, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -341,14 +368,28 @@ const ItemsPage = () => {
                 <div className="flex-grow-1" style={{ maxWidth: '400px' }}>
                   <Form.Control
                     type="text"
-                    placeholder={`🔍 Search ${items.length} items across all containers...`}
+                    placeholder={selectedTagId ? `🔍 Search within filtered items...` : `🔍 Search ${items.length} items across all containers...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="border-2"
+                    disabled={!!selectedTagId} // Disable search when tag filter is active
                   />
                 </div>
                 <div className="text-muted">
-                  {searchTerm ? (
+                  {selectedTagId ? (
+                    <>
+                      Filtered by tag: <strong>{getTagById(selectedTagId)?.name || 'Unknown Tag'}</strong> 
+                      ({filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''})
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="p-0 ms-2 text-decoration-none"
+                        onClick={() => setSelectedTagId('')}
+                      >
+                        Clear Filter
+                      </Button>
+                    </>
+                  ) : searchTerm ? (
                     <>
                       Showing {filteredItems.length} of {items.length} items
                       {filteredItems.length !== items.length && (
