@@ -17,6 +17,12 @@ const ItemsPage = () => {
   const [containers, setContainers] = useState<ContainerType[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  
+  // PERFORMANCE OPTIMIZATION: Search and Pagination State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 24; // Show 24 items per page for optimal performance
+  
   const [showQRModal, setShowQRModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -62,6 +68,49 @@ const ItemsPage = () => {
   const { user } = useAuthStore();
   const { showSuccess, showError } = useNotifications();
 
+  // Helper functions for filtering (must be declared before filtering logic)
+  const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
+  const getCategoryById = (categoryId: string) => categories.find(c => c.id === categoryId);
+  const getContainerName = (containerId: string) => {
+    const container = containers.find(c => c.id === containerId);
+    return container?.name || 'Unknown Container';
+  };
+
+  // PERFORMANCE OPTIMIZATION: Filter and paginate items
+  const filteredItems = items.filter(item => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.brand?.toLowerCase().includes(searchLower) ||
+      item.model?.toLowerCase().includes(searchLower) ||
+      item.serialNumber?.toLowerCase().includes(searchLower) ||
+      // Search in container name
+      getContainerName(item.containerId).toLowerCase().includes(searchLower) ||
+      // Search in tags
+      item.tags?.some(tagId => {
+        const tag = getTagById(tagId);
+        return tag?.name.toLowerCase().includes(searchLower);
+      }) ||
+      // Search in category
+      (() => {
+        const category = getCategoryById(item.categoryId || '');
+        return category?.name.toLowerCase().includes(searchLower);
+      })()
+    );
+  });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   useEffect(() => {
     if (user) {
       loadData();
@@ -92,11 +141,6 @@ const ItemsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getContainerName = (containerId: string) => {
-    const container = containers.find(c => c.id === containerId);
-    return container?.name || 'Unknown Container';
   };
 
   const handleShowQR = (item: Item) => {
@@ -222,9 +266,6 @@ const ItemsPage = () => {
     }
   };
 
-  const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
-  const getCategoryById = (categoryId: string) => categories.find(c => c.id === categoryId);
-
   return (
     <Container>
       <Row className="mb-4">
@@ -291,14 +332,53 @@ const ItemsPage = () => {
           </Col>
         </Row>
       ) : (
-        <Row>
-          {items.map((item) => (
+        <>
+          {/* PERFORMANCE OPTIMIZATION: Search and Filter Bar */}
+          <Row className="mb-4">
+            <Col>
+              <div className="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+                <div className="flex-grow-1" style={{ maxWidth: '400px' }}>
+                  <Form.Control
+                    type="text"
+                    placeholder={`🔍 Search ${items.length} items across all containers...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border-2"
+                  />
+                </div>
+                <div className="text-muted">
+                  {searchTerm ? (
+                    <>
+                      Showing {filteredItems.length} of {items.length} items
+                      {filteredItems.length !== items.length && (
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="p-0 ms-2 text-decoration-none"
+                          onClick={() => setSearchTerm('')}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    `${items.length} items total`
+                  )}
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Items Grid - Now Paginated */}
+          <Row>
+            {paginatedItems.map((item) => (
             <Col md={6} lg={4} key={item.id} className="mb-4">
               <Card>
                 {item.imageUrl && (
                   <Card.Img 
                     variant="top" 
-                    src={item.imageUrl} 
+                    src={item.imageUrl}
+                    loading="lazy"
                     style={{ height: '200px', objectFit: 'cover' }} 
                   />
                 )}
@@ -381,7 +461,55 @@ const ItemsPage = () => {
               </Card>
             </Col>
           ))}
-        </Row>
+          </Row>
+
+          {/* PERFORMANCE OPTIMIZATION: Pagination Controls */}
+          {totalPages > 1 && (
+            <Row className="mt-4">
+              <Col>
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                  <div className="text-muted">
+                    Page {currentPage} of {totalPages} • Showing {paginatedItems.length} of {filteredItems.length} items
+                  </div>
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(1)}
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(totalPages)}
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          )}
+        </>
       )}
 
       {/* Edit Item Modal */}

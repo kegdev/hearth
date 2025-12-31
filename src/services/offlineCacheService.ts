@@ -43,7 +43,10 @@ interface CachedItems {
 }
 
 const CACHE_VERSION = 1;
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes (extended for better offline testing)
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for containers/items
+const ACCOUNT_STATUS_TTL = 2 * 60 * 60 * 1000; // 2 hours for account status (performance optimization)
+const PROFILE_TTL = 2 * 60 * 60 * 1000; // 2 hours for profile data
+const SESSION_VALIDATED_KEY = 'hearth-session-validated';
 const PROFILE_CACHE_KEY = 'hearth-profile-cache';
 const STATUS_CACHE_KEY = 'hearth-status-cache';
 const CONTAINERS_CACHE_KEY = 'hearth-containers-cache';
@@ -58,10 +61,40 @@ class OfflineCacheService {
   }
 
   /**
-   * Check if cached data is still valid
+   * Check if cached data is still valid (with different TTLs for different data types)
    */
-  private isCacheValid(timestamp: number): boolean {
-    return Date.now() - timestamp < CACHE_TTL;
+  private isCacheValid(timestamp: number, ttl: number = CACHE_TTL): boolean {
+    return Date.now() - timestamp < ttl;
+  }
+
+  /**
+   * Check if user has been validated this session (performance optimization)
+   */
+  isSessionValidated(userId: string): boolean {
+    try {
+      const sessionData = sessionStorage.getItem(SESSION_VALIDATED_KEY);
+      if (!sessionData) return false;
+      
+      const data = JSON.parse(sessionData);
+      return data.userId === userId && data.timestamp > Date.now() - (4 * 60 * 60 * 1000); // 4 hour session
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Mark user as validated for this session
+   */
+  markSessionValidated(userId: string): void {
+    try {
+      const sessionData = {
+        userId,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(SESSION_VALIDATED_KEY, JSON.stringify(sessionData));
+    } catch (error) {
+      console.warn('Failed to mark session as validated:', error);
+    }
   }
 
   /**
@@ -74,11 +107,11 @@ class OfflineCacheService {
 
       const data: CachedUserProfile = JSON.parse(cached);
       
-      // Check version, user ID, and TTL
+      // Check version, user ID, and TTL (use longer TTL for profile data)
       if (
         data.version !== CACHE_VERSION ||
         data.userId !== userId ||
-        !this.isCacheValid(data.timestamp)
+        !this.isCacheValid(data.timestamp, PROFILE_TTL)
       ) {
         this.clearProfileCache();
         return null;
@@ -161,11 +194,11 @@ class OfflineCacheService {
 
       const data: CachedAccountStatus = JSON.parse(cached);
       
-      // Check version, user ID, and TTL
+      // Check version, user ID, and TTL (use longer TTL for account status)
       if (
         data.version !== CACHE_VERSION ||
         data.userId !== userId ||
-        !this.isCacheValid(data.timestamp)
+        !this.isCacheValid(data.timestamp, ACCOUNT_STATUS_TTL)
       ) {
         this.clearStatusCache();
         return null;

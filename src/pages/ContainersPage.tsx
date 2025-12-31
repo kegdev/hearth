@@ -63,62 +63,94 @@ const ContainersPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load containers first
+      // PERFORMANCE: Load containers first and show UI immediately
       const userContainers = await getUserContainers(user.uid);
       setContainers(userContainers);
       
-      // Get item counts for each container (including shared containers)
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        userContainers.map(async (container) => {
-          try {
-            const containerItems = await getContainerItems(container.id);
-            counts[container.id] = containerItems.length;
-            console.log(`📦 Container ${container.name} has ${containerItems.length} items`);
-          } catch (error) {
-            console.warn(`Error getting items for container ${container.id}:`, error);
-            // Try to get cached count if available
-            const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
-            counts[container.id] = cachedCount;
-            if (cachedCount > 0) {
-              console.log(`📦 Using cached count for ${container.name}: ${cachedCount} items`);
-            }
-          }
-        })
-      );
-      setItemCounts(counts);
+      // AGGRESSIVE OPTIMIZATION: Show containers immediately with cached counts
+      const cachedCounts: Record<string, number> = {};
+      userContainers.forEach(container => {
+        const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
+        cachedCounts[container.id] = cachedCount;
+      });
+      setItemCounts(cachedCounts);
       
-      // Get permissions for each container - but handle errors gracefully
-      const permissions: Record<string, SharePermission | null> = {};
-      try {
-        await Promise.all(
-          userContainers.map(async (container) => {
-            try {
-              permissions[container.id] = await getUserContainerPermission(container.id, user.uid);
-            } catch (error) {
-              console.warn(`Error getting permission for container ${container.id}:`, error);
-              // Default to admin permission for owned containers
-              permissions[container.id] = container.userId === user.uid ? 'admin' : null;
-            }
-          })
-        );
-      } catch (error) {
-        console.warn('Error loading container permissions:', error);
-        // Set default permissions for all containers
-        userContainers.forEach(container => {
-          permissions[container.id] = container.userId === user.uid ? 'admin' : null;
-        });
-      }
-      setContainerPermissions(permissions);
+      // PERFORMANCE: Set loading to false immediately to show UI
+      setFetchLoading(false);
+      
+      // BACKGROUND LOADING: Load item counts in background (non-blocking)
+      backgroundLoadItemCounts(userContainers);
+      
+      // BACKGROUND LOADING: Load permissions in background (non-blocking)  
+      backgroundLoadPermissions(userContainers);
       
       setError(''); // Clear any previous errors on successful load
     } catch (err: any) {
-      // Only show error for actual network/API failures
       console.error('Error loading containers:', err);
-      // Don't show error in main UI - services handle demo mode gracefully
       setError('');
-    } finally {
       setFetchLoading(false);
+    }
+  };
+
+  // Background loading of item counts (non-blocking)
+  const backgroundLoadItemCounts = async (containers: ContainerWithSharing[]) => {
+    console.log('🔄 Background loading item counts...');
+    
+    const counts: Record<string, number> = {};
+    
+    // Load counts in parallel but don't block UI
+    await Promise.all(
+      containers.map(async (container) => {
+        try {
+          const containerItems = await getContainerItems(container.id);
+          counts[container.id] = containerItems.length;
+          
+          // Update UI incrementally as counts load
+          setItemCounts(prev => ({ ...prev, [container.id]: containerItems.length }));
+          
+          console.log(`📦 Container ${container.name} has ${containerItems.length} items`);
+        } catch (error) {
+          console.warn(`Error getting items for container ${container.id}:`, error);
+          // Keep cached count if available
+          const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
+          if (cachedCount > 0) {
+            counts[container.id] = cachedCount;
+            console.log(`📦 Using cached count for ${container.name}: ${cachedCount} items`);
+          }
+        }
+      })
+    );
+  };
+
+  // Background loading of permissions (non-blocking)
+  const backgroundLoadPermissions = async (containers: ContainerWithSharing[]) => {
+    if (!user) return;
+    
+    console.log('🔄 Background loading permissions...');
+    
+    const permissions: Record<string, SharePermission | null> = {};
+    
+    try {
+      await Promise.all(
+        containers.map(async (container) => {
+          try {
+            permissions[container.id] = await getUserContainerPermission(container.id, user.uid);
+          } catch (error) {
+            console.warn(`Error getting permission for container ${container.id}:`, error);
+            // Default to admin permission for owned containers
+            permissions[container.id] = container.userId === user.uid ? 'admin' : null;
+          }
+        })
+      );
+      
+      setContainerPermissions(permissions);
+    } catch (error) {
+      console.warn('Error loading container permissions:', error);
+      // Set default permissions for all containers
+      containers.forEach(container => {
+        permissions[container.id] = container.userId === user.uid ? 'admin' : null;
+      });
+      setContainerPermissions(permissions);
     }
   };
 

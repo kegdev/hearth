@@ -72,73 +72,92 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     if (!user) return;
 
     try {
-      setLoading(true);
       setError('');
       
-      // Check if we should use cached data (offline or valid cache exists)
+      // AGGRESSIVE OPTIMIZATION: Always check cache first for instant loading
+      const cachedStatus = offlineCacheService.getCachedAccountStatus(user.uid);
+      const sessionValidated = offlineCacheService.isSessionValidated(user.uid);
+      
+      // INSTANT LOADING: Show UI immediately for any cached approved/admin user
+      if (cachedStatus && (cachedStatus.status === 'approved' || cachedStatus.status === 'admin')) {
+        console.log('⚡ INSTANT LOAD: Cached approved user, showing UI immediately');
+        
+        // Show UI instantly - no loading spinner
+        if (cachedStatus.hasProfile) {
+          setUserProfile({
+            uid: user.uid,
+            email: cachedStatus.email || user.email || '',
+            displayName: cachedStatus.displayName,
+            status: cachedStatus.status,
+            isAdmin: cachedStatus.status === 'admin',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        
+        setUsingCachedData(false); // Don't show offline indicator
+        setLoading(false);
+        
+        // Mark as validated and do background refresh if needed
+        if (!sessionValidated) {
+          offlineCacheService.markSessionValidated(user.uid);
+        }
+        
+        // Only do background validation if cache is getting old (> 1 hour)
+        const cacheAge = Date.now() - cachedStatus.timestamp;
+        if (cacheAge > 60 * 60 * 1000) { // 1 hour
+          console.log('🔄 Background refresh: Cache is over 1 hour old');
+          backgroundValidateProfile();
+        }
+        
+        return;
+      }
+      
+      // For non-approved users or no cache, show loading and validate
+      console.log('🔍 Full validation needed for:', cachedStatus?.status || 'no cache');
+      setLoading(true);
+      
+      // Check other cached data for offline scenarios
       const shouldUseCache = offlineCacheService.shouldUseCachedData(user.uid);
       const isActuallyOffline = offlineCacheService.isInOfflineMode();
       
-      if (shouldUseCache) {
+      if (shouldUseCache && (cachedStatus || offlineCacheService.getCachedProfile(user.uid))) {
         const cachedData = offlineCacheService.getCachedProfile(user.uid);
-        const cachedStatus = offlineCacheService.getCachedAccountStatus(user.uid);
         
-        if (cachedData || cachedStatus) {
-          console.log('📱 Using cached account data', isActuallyOffline ? '(offline mode)' : '(performance)');
-          
-          if (cachedData) {
-            setUserProfile(cachedData.profile);
-            setRegistrationRequest(cachedData.registrationRequest);
-          } else if (cachedStatus) {
-            // Create minimal profile from cached status
-            if (cachedStatus.hasProfile) {
-              setUserProfile({
-                uid: user.uid,
-                email: cachedStatus.email || user.email || '',
-                displayName: cachedStatus.displayName,
-                status: cachedStatus.status,
-                isAdmin: cachedStatus.status === 'admin',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
-            } else {
-              setRegistrationRequest({
-                email: cachedStatus.email || user.email,
-                displayName: cachedStatus.displayName,
-                status: cachedStatus.status,
-              });
-            }
+        console.log('📱 Using cached account data', isActuallyOffline ? '(offline mode)' : '(performance)');
+        
+        if (cachedData) {
+          setUserProfile(cachedData.profile);
+          setRegistrationRequest(cachedData.registrationRequest);
+        } else if (cachedStatus) {
+          // Create minimal profile from cached status
+          if (cachedStatus.hasProfile) {
+            setUserProfile({
+              uid: user.uid,
+              email: cachedStatus.email || user.email || '',
+              displayName: cachedStatus.displayName,
+              status: cachedStatus.status,
+              isAdmin: cachedStatus.status === 'admin',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          } else {
+            setRegistrationRequest({
+              email: cachedStatus.email || user.email,
+              displayName: cachedStatus.displayName,
+              status: cachedStatus.status,
+            });
           }
-          
-          setUsingCachedData(isActuallyOffline); // Only show as "using cached data" if actually offline
-          setLoading(false);
-          return;
         }
+        
+        setUsingCachedData(isActuallyOffline);
+        setLoading(false);
+        return;
       }
 
       // If online and no valid cache, fetch fresh data
       if (offlineCacheService.isOnline()) {
-        setUsingCachedData(false);
-        
-        let profile = await getUserProfile(user.uid);
-        
-        // If no profile exists and this is the admin email, initialize admin profile
-        if (!profile && user.email && isAdminInitializationNeeded(user.email)) {
-          console.log('🔧 Initializing admin profile for:', user.email);
-          profile = await setupAdminProfile(user.uid, user.email, user.displayName || undefined);
-        }
-        
-        setUserProfile(profile);
-
-        // If no user profile exists, check for registration requests
-        let request = null;
-        if (!profile && user.email) {
-          request = await getRegistrationRequestByEmail(user.email);
-          setRegistrationRequest(request);
-        }
-
-        // Cache the fresh data
-        offlineCacheService.cacheProfile(user.uid, profile, request);
+        await performFullValidation();
       } else {
         // Offline with no cache - show error
         throw new Error('No internet connection and no cached data available');
@@ -175,6 +194,51 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Background validation (non-blocking)
+  const backgroundValidateProfile = async () => {
+    if (!user || !offlineCacheService.isOnline()) return;
+    
+    try {
+      console.log('🔄 Background validation in progress...');
+      await performFullValidation();
+    } catch (error) {
+      console.warn('Background validation failed:', error);
+      // Don't show errors for background validation
+    }
+  };
+
+  // Full validation process
+  const performFullValidation = async () => {
+    if (!user) return;
+    
+    setUsingCachedData(false);
+    
+    let profile = await getUserProfile(user.uid);
+    
+    // If no profile exists and this is the admin email, initialize admin profile
+    if (!profile && user.email && isAdminInitializationNeeded(user.email)) {
+      console.log('🔧 Initializing admin profile for:', user.email);
+      profile = await setupAdminProfile(user.uid, user.email, user.displayName || undefined);
+    }
+    
+    setUserProfile(profile);
+
+    // If no user profile exists, check for registration requests
+    let request = null;
+    if (!profile && user.email) {
+      request = await getRegistrationRequestByEmail(user.email);
+      setRegistrationRequest(request);
+    }
+
+    // Cache the fresh data
+    offlineCacheService.cacheProfile(user.uid, profile, request);
+    
+    // Mark as validated if approved/admin
+    if (profile && (profile.status === 'approved' || profile.status === 'admin')) {
+      offlineCacheService.markSessionValidated(user.uid);
     }
   };
 

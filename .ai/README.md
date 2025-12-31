@@ -8,20 +8,21 @@ This `.ai` folder contains organized documentation for the Hearth project:
 
 ### 📋 **Root Level** - High-Level Documentation
 - **README.md** - This overview and project plan
-- **HANDOFF.md** - Project handoff documentation
-- **PHASE_2_OPTIMIZATIONS.md** - Phase 2 enhancement plans
-- **PHASE_3_ROADMAP.md** - Future roadmap and features
-- **FINAL_DEPLOYMENT_CHECKLIST.md** - Pre-deployment checklist
-- **PRODUCTION_DEPLOYMENT_GUIDE.md** - Production deployment instructions
-- **PRODUCTION_DEPLOYMENT.md** - Legacy deployment docs
-- **FIREBASE_SETUP.md** - Firebase configuration guide
-- **GITHUB_PAGES_DEPLOYMENT.md** - GitHub Pages deployment
-- **GIT_SECURITY_SETUP.md** - Git security configuration
+
+### 🗺️ **roadmap/** - Project Roadmap and Planning
+- **PHASE_1_COMPLETE.md** - Phase 1 completion documentation
+- **PHASE_2_OPTIMIZATIONS.md** - Phase 2 enhancement plans (Performance Complete)
+- **PHASE_3_ROADMAP.md** - Phase 3 advanced features and security
+- **PHASE_4_ADVANCED_FEATURES.md** - Phase 4 AI and enterprise features
 
 ### 🔧 **features/** - Feature Implementation Documentation
 - **AUTO_MODAL_FEATURE.md** - Auto-modal functionality
+- **CONTAINER_SHARING_SYSTEM.md** - Multi-user container sharing
 - **DELETE_FUNCTIONALITY.md** - Delete operations implementation
 - **EMAIL_NOTIFICATION_SETUP.md** - Email notification system
+- **GLOBAL_SEARCH_SYSTEM.md** - Advanced search functionality
+- **PERFORMANCE_OPTIMIZATION_SYSTEM.md** - Search, pagination, and performance improvements
+- **PWA_OFFLINE_FUNCTIONALITY.md** - Progressive Web App offline capabilities
 - **QR_PRINT_FEATURE.md** - QR code printing functionality
 - **TAGS_CATEGORIES_SYSTEM.md** - Tags and categories system
 - **UX_IMPROVEMENTS.md** - User experience enhancements
@@ -32,9 +33,20 @@ This `.ai` folder contains organized documentation for the Hearth project:
 - **ERROR_MESSAGING_FIX.md** - Error message improvements
 - **FIRESTORE_INDEX_FIX.md** - Firestore index issues
 
+### 🏛️ **archive/** - Historical Documentation
+- **COMPREHENSIVE_DEPLOYMENT_GUIDE.md** - Complete deployment guide
+- **FINAL_DEPLOYMENT_CHECKLIST.md** - Pre-deployment checklist
+- **FIREBASE_SETUP.md** - Firebase configuration guide
+- **GIT_SECURITY_SETUP.md** - Git security configuration
+- **GITHUB_PAGES_DEPLOYMENT.md** - GitHub Pages deployment
+- **HANDOFF.md** - Project handoff documentation
+- **PRODUCTION_DEPLOYMENT_GUIDE.md** - Production deployment instructions
 ### 🔍 **audits/** - Quality Assurance and Security
 - **PRODUCTION_READINESS_AUDIT.md** - Initial production audit
 - **PRODUCTION_READINESS_AUDIT_V2.md** - Updated production audit
+- **PRODUCTION_READINESS_AUDIT_V3.md** - Security-focused audit
+- **PRODUCTION_READINESS_AUDIT_V4.md** - Performance optimization audit
+- **PRODUCTION_READINESS_AUDIT_V5.md** - Final production audit
 - **PRODUCTION_SECURITY_AUDIT.md** - Security assessment
 
 ### 🧪 **testing/** - Testing Documentation
