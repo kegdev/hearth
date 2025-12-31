@@ -21,6 +21,7 @@ This `.ai` folder contains organized documentation for the Hearth project:
 - **DELETE_FUNCTIONALITY.md** - Delete operations implementation
 - **EMAIL_NOTIFICATION_SETUP.md** - Email notification system
 - **GLOBAL_SEARCH_SYSTEM.md** - Advanced search functionality
+- **INTERACTIVE_TAG_CLOUD_SYSTEM.md** - Visual tag cloud with precise filtering
 - **PERFORMANCE_OPTIMIZATION_SYSTEM.md** - Search, pagination, and performance improvements
 - **PWA_OFFLINE_FUNCTIONALITY.md** - Progressive Web App offline capabilities
 - **QR_PRINT_FEATURE.md** - QR code printing functionality

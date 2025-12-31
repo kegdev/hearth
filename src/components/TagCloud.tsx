@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { getUserTags } from '../services/tagService';
@@ -14,14 +14,35 @@ interface TagWithCount {
 const TagCloud = () => {
   const [tagData, setTagData] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const tagCloudRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (tagCloudRef.current) {
+      observer.observe(tagCloudRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [isVisible]);
 
   useEffect(() => {
-    if (user) {
+    if (user && isVisible) {
+      // Only load when component is visible
       loadTagCloud();
     }
-  }, [user]);
+  }, [user, isVisible]);
 
   const loadTagCloud = async () => {
     if (!user) return;
@@ -35,7 +56,7 @@ const TagCloud = () => {
         getUserItems(user.uid)
       ]);
 
-      // Count tag usage
+      // Count tag usage efficiently
       const tagCounts = new Map<string, number>();
       
       items.forEach(item => {
@@ -47,13 +68,14 @@ const TagCloud = () => {
       });
 
       // Create tag data with counts and sizes
+      const maxCount = Math.max(...Array.from(tagCounts.values()), 1);
       const tagWithCounts: TagWithCount[] = tags
         .map(tag => {
           const count = tagCounts.get(tag.id) || 0;
           return {
             tag,
             count,
-            size: getTagSize(count, Math.max(...Array.from(tagCounts.values()), 1))
+            size: getTagSize(count, maxCount)
           };
         })
         .filter(tagData => tagData.count > 0) // Only show tags that are actually used
@@ -106,64 +128,64 @@ const TagCloud = () => {
     navigate(`/items?tagId=${encodeURIComponent(tag.id)}`);
   };
 
-  if (loading) {
-    return (
-      <div className="text-center text-muted">
-        <small>Loading tags...</small>
-      </div>
-    );
-  }
-
-  if (tagData.length === 0) {
-    return (
-      <div className="text-center text-muted">
-        <small>No tags in use yet. Add some tags to your items to see them here!</small>
-      </div>
-    );
-  }
-
   return (
-    <div className="tag-cloud">
+    <div className="tag-cloud" ref={tagCloudRef}>
       <h6 className="text-muted mb-3">🏷️ Your Tags</h6>
-      <div className="d-flex flex-wrap gap-2 justify-content-center">
-        {tagData.map(({ tag, count, size }) => (
-          <span
-            key={tag.id}
-            style={{
-              backgroundColor: tag.color,
-              color: getTextColor(tag.color),
-              fontSize: getFontSize(size),
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              border: 'none',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.375rem',
-              fontWeight: size === 'xl' || size === 'lg' ? 'bold' : 'normal',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              display: 'inline-block',
-              margin: '0.125rem'
-            }}
-            className="tag-cloud-item"
-            onClick={() => handleTagClick(tag)}
-            title={`${tag.name} (${count} item${count !== 1 ? 's' : ''}) - Click to view items`}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            }}
-          >
-            {tag.name} {count > 1 && <small>({count})</small>}
-          </span>
-        ))}
-      </div>
-      <div className="text-center mt-2">
-        <small className="text-muted">
-          Click any tag to search for items • {tagData.length} tag{tagData.length !== 1 ? 's' : ''} in use
-        </small>
-      </div>
+      {!isVisible ? (
+        <div className="text-center text-muted">
+          <small>Scroll down to load tags...</small>
+        </div>
+      ) : loading ? (
+        <div className="text-center text-muted">
+          <small>Loading tags...</small>
+        </div>
+      ) : tagData.length === 0 ? (
+        <div className="text-center text-muted">
+          <small>No tags in use yet. Add some tags to your items to see them here!</small>
+        </div>
+      ) : (
+        <>
+          <div className="d-flex flex-wrap gap-2 justify-content-center">
+            {tagData.map(({ tag, count, size }) => (
+              <span
+                key={tag.id}
+                style={{
+                  backgroundColor: tag.color,
+                  color: getTextColor(tag.color),
+                  fontSize: getFontSize(size),
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.375rem',
+                  fontWeight: size === 'xl' || size === 'lg' ? 'bold' : 'normal',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  display: 'inline-block',
+                  margin: '0.125rem'
+                }}
+                className="tag-cloud-item"
+                onClick={() => handleTagClick(tag)}
+                title={`${tag.name} (${count} item${count !== 1 ? 's' : ''}) - Click to view items`}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }}
+              >
+                {tag.name} {count > 1 && <small>({count})</small>}
+              </span>
+            ))}
+          </div>
+          <div className="text-center mt-2">
+            <small className="text-muted">
+              Click any tag to search for items • {tagData.length} tag{tagData.length !== 1 ? 's' : ''} in use
+            </small>
+          </div>
+        </>
+      )}
     </div>
   );
 };
