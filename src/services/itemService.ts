@@ -13,6 +13,7 @@ import {
 import { db, isFirebaseConfigured } from '../firebase/config';
 import { compressAndConvertToBase64 } from '../utils/imageUtils';
 import { offlineCacheService } from './offlineCacheService';
+import { shortUrlService } from './shortUrlService';
 import type { Item, CreateItemData } from '../types';
 
 const COLLECTION_NAME = 'items';
@@ -418,6 +419,11 @@ export const deleteItem = async (itemId: string): Promise<void> => {
 
   try {
     await deleteDoc(doc(db, COLLECTION_NAME, itemId));
+    
+    // Clean up short URLs for this item (async, don't block)
+    shortUrlService.cleanupItemShortUrls(itemId).catch(error => {
+      console.warn('Failed to cleanup item short URLs:', error);
+    });
   } catch (error) {
     console.error('Error deleting item:', error);
     throw new Error('Failed to delete item');

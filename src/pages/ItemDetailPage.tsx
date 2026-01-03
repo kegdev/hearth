@@ -171,6 +171,9 @@ const ItemDetailPage = () => {
         <Row>
           <Col className="text-center mt-5">
             <h3>Item not found</h3>
+            <p className="text-muted">
+              This item may not exist or you may not have permission to access it.
+            </p>
             <Link to="/items" className="btn btn-primary">
               Back to Items
             </Link>
@@ -591,6 +594,8 @@ const ItemDetailPage = () => {
         onHide={() => setShowQRModal(false)}
         title={item.name}
         url={`/item/${item.id}`}
+        type="item"
+        entityId={item.id}
       />
     </Container>
   );

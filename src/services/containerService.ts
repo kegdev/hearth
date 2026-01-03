@@ -13,6 +13,7 @@ import { db, isFirebaseConfigured } from '../firebase/config';
 import { compressAndConvertToBase64 } from '../utils/imageUtils';
 import { getSharedContainers, getUserContainerPermission } from './containerSharingService';
 import { offlineCacheService } from './offlineCacheService';
+import { shortUrlService } from './shortUrlService';
 import type { Container, CreateContainerData, SharedContainer, ContainerWithSharing } from '../types';
 
 const COLLECTION_NAME = 'containers';
@@ -284,6 +285,11 @@ export const deleteContainer = async (containerId: string, userId?: string): Pro
     
     // Execute all deletions atomically
     await batch.commit();
+    
+    // Clean up short URLs for this container (async, don't block)
+    shortUrlService.cleanupContainerShortUrls(containerId).catch(error => {
+      console.warn('Failed to cleanup container short URLs:', error);
+    });
     
     console.log(`Container ${containerId} and ${itemsSnapshot.docs.length} items deleted`);
   } catch (error) {

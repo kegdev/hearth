@@ -1,15 +1,82 @@
 import { Modal, Button } from 'react-bootstrap';
 import { QRCodeSVG } from 'qrcode.react';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import { shortUrlService } from '../services/shortUrlService';
 
 interface QRCodeModalProps {
   show: boolean;
   onHide: () => void;
   title: string;
   url: string;
+  type?: 'container' | 'item';
+  entityId?: string;
 }
 
-const QRCodeModal = ({ show, onHide, title, url }: QRCodeModalProps) => {
-  const fullUrl = `${window.location.origin}${url}`;
+const QRCodeModal = ({ show, onHide, title, url, type = 'item', entityId }: QRCodeModalProps) => {
+  const { user } = useAuthStore();
+  const [shortUrl, setShortUrl] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Generate short URL when modal opens
+  useEffect(() => {
+    const generateShortUrl = async () => {
+      if (!show || !user || !entityId) return;
+
+      setLoading(true);
+      setError('');
+
+      try {
+        const shortCode = await shortUrlService.getOrCreateShortUrl(
+          url,
+          user.uid,
+          type,
+          entityId
+        );
+        
+        const shortUrlPath = `${window.location.origin}/q/${shortCode}`;
+        setShortUrl(shortUrlPath);
+      } catch (err) {
+        console.error('Error generating short URL:', err);
+        setError('Unable to generate short URL');
+        // Fallback to original URL
+        setShortUrl(`${window.location.origin}${url}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    generateShortUrl();
+  }, [show, user, url, type, entityId]);
+
+  // Use short URL if available, otherwise fallback to original
+  const qrCodeUrl = shortUrl || `${window.location.origin}${url}`;
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(qrCodeUrl);
+      setCopySuccess(true);
+      // Reset success message after 2 seconds
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = qrCodeUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
 
   const handlePrint = () => {
     // Create a new window for printing
@@ -131,7 +198,7 @@ const QRCodeModal = ({ show, onHide, title, url }: QRCodeModalProps) => {
       <Modal.Body className="text-center">
         <div className="mb-3 qr-code-container">
           <QRCodeSVG
-            value={fullUrl}
+            value={qrCodeUrl}
             size={200}
             bgColor="#ffffff"
             fgColor="#000000"
@@ -139,10 +206,36 @@ const QRCodeModal = ({ show, onHide, title, url }: QRCodeModalProps) => {
             includeMargin={true}
           />
         </div>
+        {loading && (
+          <p className="text-muted small">
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Generating QR code...
+          </p>
+        )}
+        {error && (
+          <p className="text-warning small">
+            ⚠️ {error}
+          </p>
+        )}
         <p className="text-muted small">
-          Scan this QR code to quickly access this item
+          Scan this QR code to quickly access this {type}
         </p>
-        <code className="small">{fullUrl}</code>
+        <div className="d-flex align-items-center justify-content-center gap-2">
+          <code className="small flex-grow-1 text-center">{qrCodeUrl}</code>
+          <Button 
+            variant={copySuccess ? "success" : "outline-secondary"} 
+            size="sm" 
+            onClick={handleCopyUrl}
+            className="ms-2"
+          >
+            {copySuccess ? "✅" : "📋"}
+          </Button>
+        </div>
+        {copySuccess && (
+          <p className="text-success small text-center mt-2 mb-0">
+            URL copied to clipboard!
+          </p>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="success" onClick={handleSave}>

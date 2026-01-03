@@ -54,7 +54,7 @@ export const shareContainer = async (
     // 1. Verify the container exists and user owns it
     const containerDoc = await getDoc(doc(db, CONTAINERS_COLLECTION, data.containerId));
     if (!containerDoc.exists()) {
-      throw new Error('Container not found');
+      throw new Error('Container not found or you do not have permission to access it');
     }
     
     const containerData = containerDoc.data();
@@ -156,7 +156,7 @@ export const getContainerShares = async (
     // Verify user owns the container first
     const containerDoc = await getDoc(doc(db, CONTAINERS_COLLECTION, containerId));
     if (!containerDoc.exists()) {
-      throw new Error('Container not found');
+      throw new Error('Container not found or you do not have permission to access it');
     }
     
     const containerData = containerDoc.data();
@@ -272,7 +272,7 @@ export const updateSharePermission = async (
     // Verify user owns the container
     const containerDoc = await getDoc(doc(db, CONTAINERS_COLLECTION, containerId));
     if (!containerDoc.exists()) {
-      throw new Error('Container not found');
+      throw new Error('Container not found or you do not have permission to access it');
     }
     
     const containerData = containerDoc.data();
@@ -322,7 +322,7 @@ export const revokeContainerShare = async (
     // Verify user owns the container
     const containerDoc = await getDoc(doc(db, CONTAINERS_COLLECTION, containerId));
     if (!containerDoc.exists()) {
-      throw new Error('Container not found');
+      throw new Error('Container not found or you do not have permission to access it');
     }
     
     const containerData = containerDoc.data();

@@ -24,6 +24,7 @@ import ContainerDetailPage from './pages/ContainerDetailPage';
 import ItemsPage from './pages/ItemsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import SearchResultsPage from './pages/SearchResultsPage';
+import ShortUrlRedirectPage from './pages/ShortUrlRedirectPage';
 
 // Lazy load admin page only (less critical for offline use)
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
@@ -74,6 +75,7 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<SimpleLoginPage />} />
                   <Route path="/request-access" element={<RegistrationRequestPage />} />
+                  <Route path="/q/:shortCode" element={<ShortUrlRedirectPage />} />
                   <Route path="/*" element={
                     <AccountStatusGuard>
                       <Routes>

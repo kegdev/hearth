@@ -347,6 +347,31 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
     
+    // Short URLs collection (for QR code optimization)
+    match /shortUrls/{shortCode} {
+      // Anyone can read short URLs (needed for QR code redirects)
+      allow read: if true;
+      
+      // Only authenticated users can create short URLs for their own content
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['id', 'originalUrl', 'createdAt', 'createdBy', 'type', 'entityId']) &&
+                       request.resource.data.id == shortCode &&
+                       request.resource.data.originalUrl is string &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.createdBy == request.auth.uid &&
+                       request.resource.data.type in ['container', 'item'] &&
+                       request.resource.data.entityId is string;
+      
+      // Only the creator can delete their short URLs
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      
+      // No updates allowed (short URLs are immutable)
+      allow update: if false;
+      
+      // No listing allowed (prevents enumeration)
+      allow list: if false;
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

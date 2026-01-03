@@ -579,6 +579,8 @@ const ContainersPage = () => {
           onHide={() => setShowQRModal(false)}
           title={selectedContainer.name}
           url={`/container/${selectedContainer.id}`}
+          type="container"
+          entityId={selectedContainer.id}
         />
       )}
     </Container>

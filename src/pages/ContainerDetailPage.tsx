@@ -369,6 +369,9 @@ const ContainerDetailPage = () => {
         <Row>
           <Col className="text-center mt-5">
             <h3>Container not found</h3>
+            <p className="text-muted">
+              This container may not exist or you may not have permission to access it.
+            </p>
             <Link to="/containers" className="btn btn-primary">
               Back to Containers
             </Link>
@@ -1135,6 +1138,8 @@ const ContainerDetailPage = () => {
           onHide={() => setShowQRModal(false)}
           title={selectedItem.name}
           url={`/item/${selectedItem.id}`}
+          type="item"
+          entityId={selectedItem.id}
         />
       )}
 

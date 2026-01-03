@@ -971,6 +971,8 @@ const ItemsPage = () => {
           onHide={() => setShowQRModal(false)}
           title={selectedItem.name}
           url={`/item/${selectedItem.id}`}
+          type="item"
+          entityId={selectedItem.id}
         />
       )}
     </Container>
