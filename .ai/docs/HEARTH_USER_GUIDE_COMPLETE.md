@@ -1,7 +1,7 @@
 # Hearth - Complete User Guide
 
-**Version**: 1.2.0  
-**Last Updated**: December 27, 2025  
+**Version**: 1.3.0  
+**Last Updated**: January 3, 2026  
 **Status**: Production Ready
 
 ## 🏠 Welcome to Hearth
@@ -367,6 +367,6 @@ Efficiently manage multiple items at once.
 
 **Need Help?** This guide covers all major features of Hearth. For additional support or questions, please reach out through the appropriate channels.
 
-**Version**: 1.2.0 - Container Sharing & Global Search Complete  
-**Last Updated**: December 27, 2025  
+**Version**: 1.3.0 - Legal Compliance & Image Optimization Complete  
+**Last Updated**: January 3, 2026  
 **Status**: Production Ready
