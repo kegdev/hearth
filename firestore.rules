@@ -135,9 +135,9 @@ service cloud.firestore {
     // Containers collection
     match /containers/{containerId} {
       // Users can read any container (application will handle detailed permissions)
-      // Users can list containers they own
+      // Users can list containers they own, admins can list all containers
       allow read: if isAuthenticated();
-      allow list: if isOwner(resource.data.userId);
+      allow list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create containers for themselves
       allow create: if isOwner(request.resource.data.userId) && 
@@ -189,8 +189,8 @@ service cloud.firestore {
     
     // Tags collection
     match /tags/{tagId} {
-      // Users can read and list their own tags
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read and list their own tags, admins can list all tags
+      allow read, list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create tags for themselves
       allow create: if isOwner(request.resource.data.userId) && 
@@ -213,8 +213,8 @@ service cloud.firestore {
     
     // Categories collection
     match /categories/{categoryId} {
-      // Users can read and list their own categories
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read and list their own categories, admins can list all categories
+      allow read, list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create categories for themselves
       allow create: if isOwner(request.resource.data.userId) && 

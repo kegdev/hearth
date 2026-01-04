@@ -7,6 +7,7 @@ import {
   denyRegistrationRequest
 } from '../services/userRegistrationService';
 import { useNotifications } from '../components/NotificationSystem';
+import DataImportExport from '../components/DataImportExport';
 import type { UserRegistrationRequest } from '../types';
 
 const AdminDashboardPage = () => {
@@ -213,6 +214,13 @@ const AdminDashboardPage = () => {
               )}
             </Card.Body>
           </Card>
+        </Col>
+      </Row>
+
+      {/* Data Import/Export Section */}
+      <Row className="mt-4">
+        <Col>
+          <DataImportExport />
         </Col>
       </Row>
 
