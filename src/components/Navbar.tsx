@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -32,12 +32,19 @@ const AppNavbar = () => {
               <>
                 <Nav.Link as={Link} to="/containers">Containers</Nav.Link>
                 <Nav.Link as={Link} to="/items">Items</Nav.Link>
-                {user.email === import.meta.env.VITE_ADMIN_EMAIL && (
-                  <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">
-                    🛡️ Admin
-                  </Nav.Link>
-                )}
               </>
+            )}
+            <NavDropdown title="About" id="about-nav-dropdown">
+              <NavDropdown.Item as={Link} to="/about">About Hearth</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/contact">Contact & Support</NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item as={Link} to="/privacy-policy">Privacy Policy</NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/terms-of-service">Terms of Service</NavDropdown.Item>
+            </NavDropdown>
+            {user && user.email === import.meta.env.VITE_ADMIN_EMAIL && (
+              <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">
+                🛡️ Admin
+              </Nav.Link>
             )}
           </Nav>
           

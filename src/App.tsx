@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppNavbar from './components/Navbar';
+import Footer from './components/Footer';
 import PWAUpdatePrompt from './components/PWAUpdatePrompt';
 import DemoModeIndicator from './components/DemoModeIndicator';
 import InventoryStats from './components/InventoryStats';
@@ -25,6 +26,10 @@ import ItemsPage from './pages/ItemsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import ShortUrlRedirectPage from './pages/ShortUrlRedirectPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ContactPage from './pages/ContactPage';
+import AboutPage from './pages/AboutPage';
 
 // Lazy load admin page only (less critical for offline use)
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
@@ -75,6 +80,10 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<SimpleLoginPage />} />
                   <Route path="/request-access" element={<RegistrationRequestPage />} />
+                  <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/about" element={<AboutPage />} />
                   <Route path="/q/:shortCode" element={<ShortUrlRedirectPage />} />
                   <Route path="/*" element={
                     <AccountStatusGuard>
@@ -135,6 +144,7 @@ function App() {
                   </Routes>
               </main>
               <InventoryStats />
+              <Footer />
               <PWAUpdatePrompt />
             </div>
           </Router>
