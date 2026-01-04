@@ -8,6 +8,7 @@ import {
 } from '../services/userRegistrationService';
 import { useNotifications } from '../components/NotificationSystem';
 import DataImportExport from '../components/DataImportExport';
+import ImageMigration from '../components/ImageMigration';
 import type { UserRegistrationRequest } from '../types';
 
 const AdminDashboardPage = () => {
@@ -221,6 +222,13 @@ const AdminDashboardPage = () => {
       <Row className="mt-4">
         <Col>
           <DataImportExport />
+        </Col>
+      </Row>
+
+      {/* Image Migration Section */}
+      <Row className="mt-4">
+        <Col>
+          <ImageMigration />
         </Col>
       </Row>
 
