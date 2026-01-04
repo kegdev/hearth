@@ -108,9 +108,9 @@ const AboutPage = () => {
                     </ul>
                   </Col>
                   <Col md={4}>
-                    <Card className="bg-light">
+                    <Card className="bg-body-secondary border">
                       <Card.Body>
-                        <h4>Performance Metrics</h4>
+                        <h4 className="text-body">Performance Metrics</h4>
                         <div className="mb-2">
                           <Badge bg="success">Performance: 92/100</Badge>
                         </div>

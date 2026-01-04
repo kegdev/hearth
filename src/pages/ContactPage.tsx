@@ -19,7 +19,7 @@ const ContactPage = () => {
 
               <section className="mb-4">
                 <h2>📧 Get in Touch</h2>
-                <div className="bg-light p-4 rounded">
+                <div className="bg-body-secondary p-4 rounded border">
                   <Row>
                     <Col md={6}>
                       <h4>General Support</h4>

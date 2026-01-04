@@ -242,7 +242,7 @@ const PrivacyPolicyPage = () => {
               <p>
                 If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
               </p>
-              <div className="bg-light p-3 rounded">
+              <div className="bg-body-secondary p-3 rounded border">
                 <p className="mb-2"><strong>Email:</strong> support@keg.dev</p>
                 <p className="mb-2"><strong>Website:</strong> <a href="https://hearth.keg.dev" className="text-decoration-none">https://hearth.keg.dev</a></p>
                 <p className="mb-0"><strong>Response Time:</strong> We aim to respond to all privacy-related inquiries within 30 days</p>
