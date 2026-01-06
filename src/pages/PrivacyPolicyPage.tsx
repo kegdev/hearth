@@ -196,15 +196,31 @@ const PrivacyPolicyPage = () => {
             <section className="mb-4">
               <h2>9. Cookies and Tracking</h2>
               <p>Hearth uses the following types of data storage and tracking:</p>
+              
+              <h3>9.1 Essential Cookies</h3>
               <ul>
-                <li><strong>Local Storage:</strong> Stores user preferences (theme settings) and cached data for offline functionality</li>
-                <li><strong>Session Storage:</strong> Temporary storage for session validation and performance optimization</li>
-                <li><strong>Firebase Analytics:</strong> Collects usage statistics to improve the application</li>
                 <li><strong>Authentication Tokens:</strong> Secure tokens for maintaining your login session</li>
+                <li><strong>Session Storage:</strong> Temporary storage for session validation and performance optimization</li>
+                <li><strong>Local Storage:</strong> Stores user preferences (theme settings) and cached data for offline functionality</li>
               </ul>
+
+              <h3>9.2 Third-Party Cookies</h3>
+              <p>We use trusted third-party services that may set their own cookies:</p>
+              <ul>
+                <li><strong>Google Firebase:</strong> Authentication and database services (Google's privacy policy applies)</li>
+                <li><strong>Google OAuth:</strong> Secure login functionality (limited to essential authentication scopes)</li>
+              </ul>
+              
+              <h3>9.3 Cookie Control</h3>
               <p>
-                You can control these through your browser settings, but disabling them may affect the functionality of Hearth.
+                You can control cookies through your browser settings. However, disabling essential cookies may affect 
+                the functionality of Hearth, particularly login and data synchronization features.
               </p>
+              
+              <Alert variant="info" className="mt-3">
+                <strong>Cookie Minimization:</strong> We've configured our services to use the minimum necessary cookies 
+                for functionality. We do not use cookies for advertising or non-essential tracking.
+              </Alert>
             </section>
 
             <section className="mb-4">

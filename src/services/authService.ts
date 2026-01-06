@@ -12,8 +12,14 @@ import { auth, isFirebaseConfigured } from '../firebase/config';
 // Create Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  // Reduce cookie usage by limiting scopes
+  include_granted_scopes: 'false'
 });
+
+// Add additional auth settings to minimize cookies
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
 
 export const loginWithGoogle = async () => {
   // If Firebase is not configured, return mock user (demo mode)

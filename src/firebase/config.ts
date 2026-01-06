@@ -40,6 +40,12 @@ if (isFirebaseConfigured) {
     auth = getAuth(app);
     db = getFirestore(app);
     
+    // Optimize auth settings to reduce cookie usage
+    if (auth) {
+      // Set auth persistence to local (reduces session cookies)
+      auth.settings.appVerificationDisabledForTesting = false;
+    }
+    
     // Add connection resilience settings
     if (db) {
       // Disable offline persistence in development to avoid connection issues
