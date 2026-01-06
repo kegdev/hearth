@@ -124,7 +124,11 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
                 {notification.message && <p className="mb-2">{notification.message}</p>}
                 {notification.action && (
                   <button
-                    className="btn btn-sm btn-outline-light"
+                    className={`btn btn-sm ${
+                      notification.type === 'error' || notification.type === 'warning' 
+                        ? 'btn-light' 
+                        : 'btn-outline-secondary'
+                    }`}
                     onClick={() => {
                       notification.action!.onClick();
                       removeNotification(notification.id);

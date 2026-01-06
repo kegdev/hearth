@@ -85,6 +85,12 @@ const PWAUpdatePrompt = () => {
                 variant="outline-light" 
                 size="sm" 
                 onClick={handleClose}
+                className="border-white text-white"
+                style={{ 
+                  borderColor: '#ffffff',
+                  color: '#ffffff',
+                  backgroundColor: 'transparent'
+                }}
               >
                 Later
               </Button>

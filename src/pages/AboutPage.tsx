@@ -12,7 +12,7 @@ const AboutPage = () => {
             </Card.Header>
             <Card.Body>
               <Alert variant="primary">
-                <h4>🏠 Never lose track of your belongings again!</h4>
+                <h2>🏠 Never lose track of your belongings again!</h2>
                 <p className="mb-0">
                   Hearth is a modern home inventory management system designed to help you catalog, organize, 
                   and track all your personal belongings with ease and precision.
@@ -38,7 +38,7 @@ const AboutPage = () => {
                   <Col md={6}>
                     <Card className="mb-3 h-100">
                       <Card.Body>
-                        <h4>📦 Smart Organization</h4>
+                        <h3>📦 Smart Organization</h3>
                         <ul>
                           <li>Create containers for rooms, boxes, and storage areas</li>
                           <li>Add detailed item records with photos and descriptions</li>
@@ -51,7 +51,7 @@ const AboutPage = () => {
                   <Col md={6}>
                     <Card className="mb-3 h-100">
                       <Card.Body>
-                        <h4>🤝 Collaboration</h4>
+                        <h3>🤝 Collaboration</h3>
                         <ul>
                           <li>Share containers with family and household members</li>
                           <li>Granular permissions (view, edit, admin)</li>
@@ -64,7 +64,7 @@ const AboutPage = () => {
                   <Col md={6}>
                     <Card className="mb-3 h-100">
                       <Card.Body>
-                        <h4>📱 QR Code Integration</h4>
+                        <h3>📱 QR Code Integration</h3>
                         <ul>
                           <li>Generate QR codes for physical containers</li>
                           <li>Print labels for easy identification</li>
@@ -77,7 +77,7 @@ const AboutPage = () => {
                   <Col md={6}>
                     <Card className="mb-3 h-100">
                       <Card.Body>
-                        <h4>🔍 Powerful Search</h4>
+                        <h3>🔍 Powerful Search</h3>
                         <ul>
                           <li>Global search across all your inventory</li>
                           <li>Real-time search suggestions</li>
@@ -110,7 +110,7 @@ const AboutPage = () => {
                   <Col md={4}>
                     <Card className="bg-body-secondary border">
                       <Card.Body>
-                        <h4 className="text-body">Performance Metrics</h4>
+                        <h3 className="text-body">Performance Metrics</h3>
                         <div className="mb-2">
                           <Badge bg="success">Performance: 92/100</Badge>
                         </div>
@@ -134,7 +134,7 @@ const AboutPage = () => {
                 <p>Your data security and privacy are our top priorities:</p>
                 <Row>
                   <Col md={6}>
-                    <h4>🛡️ Security Measures</h4>
+                    <h3>🛡️ Security Measures</h3>
                     <ul>
                       <li>End-to-end encryption for all data</li>
                       <li>Secure Google OAuth authentication</li>
@@ -143,7 +143,7 @@ const AboutPage = () => {
                     </ul>
                   </Col>
                   <Col md={6}>
-                    <h4>🔐 Privacy Protection</h4>
+                    <h3>🔐 Privacy Protection</h3>
                     <ul>
                       <li>GDPR compliant data handling</li>
                       <li>User-controlled data sharing</li>
@@ -161,7 +161,7 @@ const AboutPage = () => {
                   <Col md={4}>
                     <Card className="text-center mb-3">
                       <Card.Body>
-                        <h4>📶 Offline Access</h4>
+                        <h3>📶 Offline Access</h3>
                         <p>View and search your inventory even without internet connection</p>
                       </Card.Body>
                     </Card>
@@ -169,7 +169,7 @@ const AboutPage = () => {
                   <Col md={4}>
                     <Card className="text-center mb-3">
                       <Card.Body>
-                        <h4>⚡ Fast Loading</h4>
+                        <h3>⚡ Fast Loading</h3>
                         <p>Intelligent caching for instant access to your data</p>
                       </Card.Body>
                     </Card>
@@ -177,7 +177,7 @@ const AboutPage = () => {
                   <Col md={4}>
                     <Card className="text-center mb-3">
                       <Card.Body>
-                        <h4>📲 Install Anywhere</h4>
+                        <h3>📲 Install Anywhere</h3>
                         <p>Add to home screen on any device for native app experience</p>
                       </Card.Body>
                     </Card>
@@ -189,7 +189,7 @@ const AboutPage = () => {
                 <h2>🎯 Perfect For</h2>
                 <Row>
                   <Col md={6}>
-                    <h4>🏠 Homeowners</h4>
+                    <h3>🏠 Homeowners</h3>
                     <ul>
                       <li>Insurance documentation and claims</li>
                       <li>Moving and relocation planning</li>
@@ -198,7 +198,7 @@ const AboutPage = () => {
                     </ul>
                   </Col>
                   <Col md={6}>
-                    <h4>👨‍👩‍👧‍👦 Families</h4>
+                    <h3>👨‍👩‍👧‍👦 Families</h3>
                     <ul>
                       <li>Shared household inventory management</li>
                       <li>Teaching kids organization skills</li>
@@ -207,7 +207,7 @@ const AboutPage = () => {
                     </ul>
                   </Col>
                   <Col md={6}>
-                    <h4>📦 Collectors</h4>
+                    <h3>📦 Collectors</h3>
                     <ul>
                       <li>Detailed cataloging of collections</li>
                       <li>Value tracking and appreciation</li>
@@ -216,7 +216,7 @@ const AboutPage = () => {
                     </ul>
                   </Col>
                   <Col md={6}>
-                    <h4>🏢 Small Businesses</h4>
+                    <h3>🏢 Small Businesses</h3>
                     <ul>
                       <li>Equipment and asset tracking</li>
                       <li>Inventory management</li>
@@ -232,7 +232,7 @@ const AboutPage = () => {
                 <Alert variant="success">
                   <Row>
                     <Col md={6}>
-                      <h4>✅ User-Focused Design</h4>
+                      <h3>✅ User-Focused Design</h3>
                       <ul className="mb-0">
                         <li>Intuitive, mobile-first interface</li>
                         <li>Accessibility compliant (WCAG AA)</li>
@@ -241,7 +241,7 @@ const AboutPage = () => {
                       </ul>
                     </Col>
                     <Col md={6}>
-                      <h4>🚀 Continuous Innovation</h4>
+                      <h3>🚀 Continuous Innovation</h3>
                       <ul className="mb-0">
                         <li>Regular feature updates</li>
                         <li>Performance optimizations</li>
@@ -312,7 +312,7 @@ const AboutPage = () => {
               <Alert variant="info">
                 <Row>
                   <Col md={8}>
-                    <h4>💬 Questions or Feedback?</h4>
+                    <h3>💬 Questions or Feedback?</h3>
                     <p className="mb-0">
                       We'd love to hear from you! Whether you have questions, suggestions, or just want to share 
                       how Hearth has helped you organize your home, please don't hesitate to reach out.
