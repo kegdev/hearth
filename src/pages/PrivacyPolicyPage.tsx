@@ -236,12 +236,103 @@ const PrivacyPolicyPage = () => {
             </section>
 
             <section className="mb-4">
-              <h2>10. Third-Party Services</h2>
-              <p>Hearth integrates with the following third-party services:</p>
+              <h2>10. Google API Services and User Data</h2>
+              <p>
+                Hearth uses Google API Services for authentication and complies with the 
+                <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                  Google API Services User Data Policy
+                </a>, including the Limited Use requirements.
+              </p>
+
+              <h3>10.1 Google User Data Accessed</h3>
+              <p>Hearth accesses the following Google user data through Google OAuth:</p>
               <ul>
-                <li><strong>Google Firebase:</strong> Database, authentication, and hosting (Google Privacy Policy applies)</li>
-                <li><strong>Google OAuth:</strong> Authentication service (Google Privacy Policy applies)</li>
-                <li><strong>EmailJS:</strong> Email notification service (EmailJS Privacy Policy applies)</li>
+                <li><strong>Basic Profile Information:</strong> Your name, email address, and profile picture</li>
+                <li><strong>Email Address:</strong> Used for account identification and communication</li>
+                <li><strong>Authentication Token:</strong> Secure token to verify your identity</li>
+              </ul>
+              <p>
+                <strong>Scopes Used:</strong> We only request the minimum necessary scopes:
+              </p>
+              <ul>
+                <li><code>openid</code> - Basic authentication</li>
+                <li><code>email</code> - Access to your email address</li>
+                <li><code>profile</code> - Access to your basic profile information</li>
+              </ul>
+
+              <h3>10.2 How We Use Google User Data</h3>
+              <p>Google user data is used exclusively for the following purposes:</p>
+              <ul>
+                <li><strong>Account Creation and Management:</strong> Creating and maintaining your Hearth account</li>
+                <li><strong>Authentication:</strong> Verifying your identity when you log in</li>
+                <li><strong>User Identification:</strong> Displaying your name and profile picture in the application</li>
+                <li><strong>Communication:</strong> Sending account-related notifications and support responses</li>
+                <li><strong>Admin Approval Process:</strong> Identifying users during the registration approval process</li>
+              </ul>
+              <p>
+                <strong>We do NOT use Google user data for:</strong>
+              </p>
+              <ul>
+                <li>Advertising or marketing purposes</li>
+                <li>Training AI or machine learning models</li>
+                <li>Selling or sharing with third parties for commercial purposes</li>
+                <li>Any purpose other than providing the Hearth inventory management service</li>
+              </ul>
+
+              <h3>10.3 Google User Data Sharing</h3>
+              <p>
+                <strong>We do NOT share your Google user data with third parties</strong> except in the following limited circumstances:
+              </p>
+              <ul>
+                <li><strong>Service Providers:</strong> Only with Google Firebase (part of Google Cloud) for secure data storage and authentication</li>
+                <li><strong>Legal Requirements:</strong> Only if required by law or to protect our legal rights</li>
+                <li><strong>User Consent:</strong> Only with your explicit consent for specific purposes</li>
+              </ul>
+              <p>
+                Your Google user data is never sold, used for advertising, or shared for commercial purposes.
+              </p>
+
+              <h3>10.4 Google User Data Storage and Protection</h3>
+              <p>Google user data is protected through multiple security layers:</p>
+              <ul>
+                <li><strong>Encryption:</strong> All data encrypted in transit (HTTPS) and at rest using Google Cloud encryption</li>
+                <li><strong>Access Controls:</strong> Strict database rules limit access to authorized users only</li>
+                <li><strong>Secure Infrastructure:</strong> Hosted on Google Firebase with enterprise-grade security</li>
+                <li><strong>Authentication Security:</strong> OAuth tokens are securely managed and regularly refreshed</li>
+                <li><strong>Data Minimization:</strong> We only store the minimum necessary Google user data</li>
+              </ul>
+
+              <h3>10.5 Google User Data Retention and Deletion</h3>
+              <p>We retain Google user data according to the following policies:</p>
+              <ul>
+                <li><strong>Active Accounts:</strong> Google user data is retained while your account is active</li>
+                <li><strong>Account Deletion:</strong> When you delete your account, all Google user data is permanently deleted within 30 days</li>
+                <li><strong>Data Portability:</strong> You can request a copy of your data at any time</li>
+                <li><strong>User Control:</strong> You can update your profile information or disconnect Google authentication at any time</li>
+              </ul>
+              
+              <h3>10.6 User Rights for Google Data</h3>
+              <p>You have full control over your Google user data:</p>
+              <ul>
+                <li><strong>Access:</strong> View all Google data we have stored about you</li>
+                <li><strong>Update:</strong> Modify your profile information through your account settings</li>
+                <li><strong>Delete:</strong> Request deletion of your Google user data by deleting your account</li>
+                <li><strong>Revoke Access:</strong> Disconnect Google authentication through your Google Account settings</li>
+                <li><strong>Data Export:</strong> Request a copy of your data in a portable format</li>
+              </ul>
+              
+              <Alert variant="info" className="mt-3">
+                <strong>Google API Services Compliance:</strong> Hearth's use of information received from Google APIs 
+                adheres to the Google API Services User Data Policy, including the Limited Use requirements. 
+                We are committed to transparent and responsible use of your Google account information.
+              </Alert>
+            </section>
+
+            <section className="mb-4">
+              <h2>11. Other Third-Party Services</h2>
+              <p>In addition to Google services, Hearth integrates with:</p>
+              <ul>
+                <li><strong>EmailJS:</strong> Email notification service for admin communications (EmailJS Privacy Policy applies)</li>
               </ul>
               <p>
                 These services have their own privacy policies, and we encourage you to review them to understand 

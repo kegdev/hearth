@@ -68,7 +68,7 @@ const HomePage = () => {
         <Col md={6} className="mb-3">
           <Card>
             <Card.Body>
-              <Card.Title>📦 Containers</Card.Title>
+              <Card.Title className="h5 mb-3">📦 Containers</Card.Title>
               <Card.Text>
                 Manage your storage containers and organize your space.
               </Card.Text>
@@ -81,7 +81,7 @@ const HomePage = () => {
         <Col md={6} className="mb-3">
           <Card>
             <Card.Body>
-              <Card.Title>📋 Items</Card.Title>
+              <Card.Title className="h5 mb-3">📋 Items</Card.Title>
               <Card.Text>
                 Browse and manage all your cataloged items.
               </Card.Text>
