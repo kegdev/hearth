@@ -29,7 +29,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h2>📦 Organize</h2>
+                <h2 className="h5 mb-3">📦 Organize</h2>
                 <p>Create containers and categorize your items for easy management.</p>
               </Card.Body>
             </Card>
@@ -37,7 +37,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h2>📱 QR Codes</h2>
+                <h2 className="h5 mb-3">📱 QR Codes</h2>
                 <p>Generate QR codes for instant access to item information.</p>
               </Card.Body>
             </Card>
@@ -45,7 +45,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h2>🔒 Private</h2>
+                <h2 className="h5 mb-3">🔒 Private</h2>
                 <p>Your inventory data is secure and only accessible to you.</p>
               </Card.Body>
             </Card>
