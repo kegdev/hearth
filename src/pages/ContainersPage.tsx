@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Modal, Form, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { createContainer, getUserContainers, deleteContainer, updateContainer } from '../services/containerService';
-import { getUserItems } from '../services/itemService';
+import { getUserContainerPermission } from '../services/containerSharingService';
+import { getContainerItems } from '../services/itemService';
+import { offlineCacheService } from '../services/offlineCacheService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
 import ImageUpload from '../components/ImageUpload';
-import type { Container as ContainerType, CreateContainerData } from '../types';
+import type { Container as ContainerType, CreateContainerData, SharePermission, ContainerWithSharing } from '../types';
 
 const ContainersPage = () => {
-  const [containers, setContainers] = useState<ContainerType[]>([]);
+  const [containers, setContainers] = useState<ContainerWithSharing[]>([]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
+  const [containerPermissions, setContainerPermissions] = useState<Record<string, SharePermission | null>>({});
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -60,29 +63,94 @@ const ContainersPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load containers and items in parallel
-      const [userContainers, userItems] = await Promise.all([
-        getUserContainers(user.uid),
-        getUserItems(user.uid)
-      ]);
-      
+      // PERFORMANCE: Load containers first and show UI immediately
+      const userContainers = await getUserContainers(user.uid);
       setContainers(userContainers);
       
-      // Count items per container
-      const counts: Record<string, number> = {};
+      // AGGRESSIVE OPTIMIZATION: Show containers immediately with cached counts
+      const cachedCounts: Record<string, number> = {};
       userContainers.forEach(container => {
-        counts[container.id] = userItems.filter(item => item.containerId === container.id).length;
+        const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
+        cachedCounts[container.id] = cachedCount;
       });
-      setItemCounts(counts);
+      setItemCounts(cachedCounts);
+      
+      // PERFORMANCE: Set loading to false immediately to show UI
+      setFetchLoading(false);
+      
+      // BACKGROUND LOADING: Load item counts in background (non-blocking)
+      backgroundLoadItemCounts(userContainers);
+      
+      // BACKGROUND LOADING: Load permissions in background (non-blocking)  
+      backgroundLoadPermissions(userContainers);
       
       setError(''); // Clear any previous errors on successful load
     } catch (err: any) {
-      // Only show error for actual network/API failures
       console.error('Error loading containers:', err);
-      // Don't show error in main UI - services handle demo mode gracefully
       setError('');
-    } finally {
       setFetchLoading(false);
+    }
+  };
+
+  // Background loading of item counts (non-blocking)
+  const backgroundLoadItemCounts = async (containers: ContainerWithSharing[]) => {
+    console.log('🔄 Background loading item counts...');
+    
+    const counts: Record<string, number> = {};
+    
+    // Load counts in parallel but don't block UI
+    await Promise.all(
+      containers.map(async (container) => {
+        try {
+          const containerItems = await getContainerItems(container.id);
+          counts[container.id] = containerItems.length;
+          
+          // Update UI incrementally as counts load
+          setItemCounts(prev => ({ ...prev, [container.id]: containerItems.length }));
+          
+          console.log(`📦 Container ${container.name} has ${containerItems.length} items`);
+        } catch (error) {
+          console.warn(`Error getting items for container ${container.id}:`, error);
+          // Keep cached count if available
+          const cachedCount = offlineCacheService.getCachedItemsCount(container.id);
+          if (cachedCount > 0) {
+            counts[container.id] = cachedCount;
+            console.log(`📦 Using cached count for ${container.name}: ${cachedCount} items`);
+          }
+        }
+      })
+    );
+  };
+
+  // Background loading of permissions (non-blocking)
+  const backgroundLoadPermissions = async (containers: ContainerWithSharing[]) => {
+    if (!user) return;
+    
+    console.log('🔄 Background loading permissions...');
+    
+    const permissions: Record<string, SharePermission | null> = {};
+    
+    try {
+      await Promise.all(
+        containers.map(async (container) => {
+          try {
+            permissions[container.id] = await getUserContainerPermission(container.id, user.uid);
+          } catch (error) {
+            console.warn(`Error getting permission for container ${container.id}:`, error);
+            // Default to admin permission for owned containers
+            permissions[container.id] = container.userId === user.uid ? 'admin' : null;
+          }
+        })
+      );
+      
+      setContainerPermissions(permissions);
+    } catch (error) {
+      console.warn('Error loading container permissions:', error);
+      // Set default permissions for all containers
+      containers.forEach(container => {
+        permissions[container.id] = container.userId === user.uid ? 'admin' : null;
+      });
+      setContainerPermissions(permissions);
     }
   };
 
@@ -149,18 +217,22 @@ const ContainersPage = () => {
       
       // Refresh the containers list to get the updated container with processed image
       if (user) {
-        const [updatedContainers, userItems] = await Promise.all([
-          getUserContainers(user.uid),
-          getUserItems(user.uid)
-        ]);
-        
+        const updatedContainers = await getUserContainers(user.uid);
         setContainers(updatedContainers);
         
-        // Update item counts
+        // Update item counts for each container (including shared containers)
         const counts: Record<string, number> = {};
-        updatedContainers.forEach(container => {
-          counts[container.id] = userItems.filter(item => item.containerId === container.id).length;
-        });
+        await Promise.all(
+          updatedContainers.map(async (container) => {
+            try {
+              const containerItems = await getContainerItems(container.id);
+              counts[container.id] = containerItems.length;
+            } catch (error) {
+              console.warn(`Error getting items for container ${container.id}:`, error);
+              counts[container.id] = 0;
+            }
+          })
+        );
         setItemCounts(counts);
       }
       
@@ -211,7 +283,10 @@ const ContainersPage = () => {
       <Row className="mb-4">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
-            <h1>📦 My Containers</h1>
+            <div>
+              <h1>📦 My Containers</h1>
+              <small className="text-muted">Your containers and containers shared with you</small>
+            </div>
             <Button variant="primary" onClick={() => setShowModal(true)}>
               + Add Container
             </Button>
@@ -247,64 +322,117 @@ const ContainersPage = () => {
         </Row>
       ) : (
         <Row>
-          {containers.map((container) => (
-            <Col md={6} lg={4} key={container.id} className="mb-4">
-              <Card>
-                {container.imageUrl && (
-                  <Link to={`/container/${container.id}`} className="text-decoration-none">
-                    <Card.Img 
-                      variant="top" 
-                      src={container.imageUrl} 
-                      style={{ 
-                        height: '200px', 
-                        objectFit: 'cover',
-                        cursor: 'pointer'
-                      }} 
-                    />
-                  </Link>
-                )}
-                <Card.Body>
-                  <Card.Title>{container.name}</Card.Title>
-                  {container.description && (
-                    <Card.Text>{container.description}</Card.Text>
+          {containers.map((container) => {
+            const permission = containerPermissions[container.id];
+            const isOwner = container.userId === user?.uid;
+            const isShared = !isOwner;
+            
+            return (
+              <Col md={6} lg={4} key={container.id} className="mb-4">
+                <Card className={`h-100 ${isShared ? 'border-info' : ''}`}>
+                  {/* Shared container header indicator */}
+                  {isShared && (
+                    <div className="bg-info text-white px-3 py-2 d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-share me-2"></i>
+                        <small className="fw-medium">Shared Container</small>
+                      </div>
+                      <Badge 
+                        bg="light" 
+                        text="dark"
+                        className="ms-2"
+                        title={`You have ${permission === 'view' ? 'view-only' : permission === 'edit' ? 'edit' : 'full'} access`}
+                      >
+                        {permission === 'view' ? 'View Only' : permission === 'edit' ? 'Can Edit' : 'Full Access'}
+                      </Badge>
+                    </div>
                   )}
-                  {container.location && (
-                    <small className="text-muted">📍 {container.location}</small>
+                  
+                  {container.imageUrl && (
+                    <Link to={`/container/${container.id}`} className="text-decoration-none">
+                      <Card.Img 
+                        variant="top" 
+                        src={container.imageUrl} 
+                        style={{ 
+                          height: '200px', 
+                          objectFit: 'cover',
+                          cursor: 'pointer',
+                          opacity: isShared ? 0.9 : 1
+                        }} 
+                      />
+                    </Link>
                   )}
-                  <div className="mt-3 d-flex flex-wrap gap-2">
-                    <Button 
-                      href={`/container/${container.id}`}
-                      variant="outline-primary" 
-                      size="sm"
-                    >
-                      View Items ({itemCounts[container.id] || 0})
-                    </Button>
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm"
-                      onClick={() => handleShowQR(container)}
-                    >
-                      QR Code
-                    </Button>
-                    <Button 
-                      variant="outline-warning" 
-                      size="sm"
-                      onClick={() => handleEditClick(container)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline-danger" 
-                      size="sm"
-                      onClick={() => handleDeleteClick(container)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
+                  <Card.Body className="d-flex flex-column">
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <Card.Title className={`mb-0 ${isShared ? 'text-info' : ''}`}>
+                        {container.name}
+                        {isShared && <i className="bi bi-share ms-2 text-info"></i>}
+                      </Card.Title>
+                    </div>
+                    
+                    {container.description && (
+                      <Card.Text className="text-muted">{container.description}</Card.Text>
+                    )}
+                    {container.location && (
+                      <small className="text-muted mb-2">📍 {container.location}</small>
+                    )}
+                    
+                    {/* Show owner info for shared containers */}
+                    {isShared && (
+                      <div className="mb-3">
+                        <small className="text-info">
+                          <i className="bi bi-person me-1"></i>
+                          Shared by {container.sharedByName || 'Unknown User'}
+                        </small>
+                      </div>
+                    )}
+                    
+                    <div className="mt-auto">
+                      <div className="d-flex flex-wrap gap-2">
+                        <Button 
+                          href={`/container/${container.id}`}
+                          variant={isShared ? "outline-info" : "outline-primary"}
+                          size="sm"
+                        >
+                          View Items ({itemCounts[container.id] || 0})
+                        </Button>
+                        <Button 
+                          variant="outline-secondary" 
+                          size="sm"
+                          onClick={() => handleShowQR(container)}
+                        >
+                          QR Code
+                        </Button>
+                        
+                        {/* Only show edit/delete for owners or users with edit/admin permission */}
+                        {permission && permission !== 'view' && (
+                          <Button 
+                            variant="outline-warning" 
+                            size="sm"
+                            onClick={() => handleEditClick(container)}
+                            title={isShared ? "Edit shared container" : "Edit container"}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        
+                        {/* Only owners can delete containers */}
+                        {isOwner && (
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm"
+                            onClick={() => handleDeleteClick(container)}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
       )}
 
@@ -451,6 +579,8 @@ const ContainersPage = () => {
           onHide={() => setShowQRModal(false)}
           title={selectedContainer.name}
           url={`/container/${selectedContainer.id}`}
+          type="container"
+          entityId={selectedContainer.id}
         />
       )}
     </Container>

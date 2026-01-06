@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { getUserProfile, getRegistrationRequestByEmail } from '../services/userRegistrationService';
 import { logoutUser } from '../services/authService';
 import { setupAdminProfile, isAdminInitializationNeeded } from '../utils/initializeAdmin';
+import { offlineCacheService } from '../services/offlineCacheService';
 import type { UserProfile } from '../types';
 
 interface AccountStatusGuardProps {
@@ -16,12 +17,48 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
   const [registrationRequest, setRegistrationRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isOffline, setIsOffline] = useState(false);
+  const [usingCachedData, setUsingCachedData] = useState(false);
 
   const { user } = useAuthStore();
 
   const handleLogout = async () => {
+    // Clear all caches on logout
+    offlineCacheService.clearAllCaches();
     await logoutUser();
   };
+
+  const handleRefresh = () => {
+    // Force cache refresh and reload
+    offlineCacheService.forceCacheRefresh();
+    loadUserProfile();
+  };
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      // Reload data when coming back online
+      if (user) {
+        loadUserProfile();
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -35,27 +72,173 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     if (!user) return;
 
     try {
-      setLoading(true);
-      let profile = await getUserProfile(user.uid);
+      setError('');
       
-      // If no profile exists and this is the admin email, initialize admin profile
-      if (!profile && user.email && isAdminInitializationNeeded(user.email)) {
-        console.log('🔧 Initializing admin profile for:', user.email);
-        profile = await setupAdminProfile(user.uid, user.email, user.displayName || undefined);
+      // AGGRESSIVE OPTIMIZATION: Always check cache first for instant loading
+      const cachedStatus = offlineCacheService.getCachedAccountStatus(user.uid);
+      const sessionValidated = offlineCacheService.isSessionValidated(user.uid);
+      
+      // INSTANT LOADING: Show UI immediately for any cached approved/admin user
+      if (cachedStatus && (cachedStatus.status === 'approved' || cachedStatus.status === 'admin')) {
+        console.log('⚡ INSTANT LOAD: Cached approved user, showing UI immediately');
+        
+        // Show UI instantly - no loading spinner
+        if (cachedStatus.hasProfile) {
+          setUserProfile({
+            uid: user.uid,
+            email: cachedStatus.email || user.email || '',
+            displayName: cachedStatus.displayName,
+            status: cachedStatus.status,
+            isAdmin: cachedStatus.status === 'admin',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        
+        setUsingCachedData(false); // Don't show offline indicator
+        setLoading(false);
+        
+        // Mark as validated and do background refresh if needed
+        if (!sessionValidated) {
+          offlineCacheService.markSessionValidated(user.uid);
+        }
+        
+        // Only do background validation if cache is getting old (> 1 hour)
+        const cacheAge = Date.now() - cachedStatus.timestamp;
+        if (cacheAge > 60 * 60 * 1000) { // 1 hour
+          console.log('🔄 Background refresh: Cache is over 1 hour old');
+          backgroundValidateProfile();
+        }
+        
+        return;
       }
       
-      setUserProfile(profile);
+      // For non-approved users or no cache, show loading and validate
+      console.log('🔍 Full validation needed for:', cachedStatus?.status || 'no cache');
+      setLoading(true);
+      
+      // Check other cached data for offline scenarios
+      const shouldUseCache = offlineCacheService.shouldUseCachedData(user.uid);
+      const isActuallyOffline = offlineCacheService.isInOfflineMode();
+      
+      if (shouldUseCache && (cachedStatus || offlineCacheService.getCachedProfile(user.uid))) {
+        const cachedData = offlineCacheService.getCachedProfile(user.uid);
+        
+        console.log('📱 Using cached account data', isActuallyOffline ? '(offline mode)' : '(performance)');
+        
+        if (cachedData) {
+          setUserProfile(cachedData.profile);
+          setRegistrationRequest(cachedData.registrationRequest);
+        } else if (cachedStatus) {
+          // Create minimal profile from cached status
+          if (cachedStatus.hasProfile) {
+            setUserProfile({
+              uid: user.uid,
+              email: cachedStatus.email || user.email || '',
+              displayName: cachedStatus.displayName,
+              status: cachedStatus.status,
+              isAdmin: cachedStatus.status === 'admin',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          } else {
+            setRegistrationRequest({
+              email: cachedStatus.email || user.email,
+              displayName: cachedStatus.displayName,
+              status: cachedStatus.status,
+            });
+          }
+        }
+        
+        setUsingCachedData(isActuallyOffline);
+        setLoading(false);
+        return;
+      }
 
-      // If no user profile exists, check for registration requests
-      if (!profile && user.email) {
-        const request = await getRegistrationRequestByEmail(user.email);
-        setRegistrationRequest(request);
+      // If online and no valid cache, fetch fresh data
+      if (offlineCacheService.isOnline()) {
+        await performFullValidation();
+      } else {
+        // Offline with no cache - show error
+        throw new Error('No internet connection and no cached data available');
       }
     } catch (err) {
       console.error('Error loading user profile:', err);
-      setError('Failed to load account status');
+      
+      // Try to use any available cached data as fallback
+      const cachedData = offlineCacheService.getCachedProfile(user.uid);
+      const cachedStatus = offlineCacheService.getCachedAccountStatus(user.uid);
+      
+      if (cachedData || cachedStatus) {
+        console.log('📱 Falling back to cached data due to error');
+        
+        if (cachedData) {
+          setUserProfile(cachedData.profile);
+          setRegistrationRequest(cachedData.registrationRequest);
+        } else if (cachedStatus && cachedStatus.hasProfile) {
+          setUserProfile({
+            uid: user.uid,
+            email: cachedStatus.email || user.email || '',
+            displayName: cachedStatus.displayName,
+            status: cachedStatus.status,
+            isAdmin: cachedStatus.status === 'admin',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        
+        setUsingCachedData(true);
+        setError('Using offline data - some features may be limited');
+      } else {
+        setError(isOffline ? 'No internet connection' : 'Failed to load account status');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Background validation (non-blocking)
+  const backgroundValidateProfile = async () => {
+    if (!user || !offlineCacheService.isOnline()) return;
+    
+    try {
+      console.log('🔄 Background validation in progress...');
+      await performFullValidation();
+    } catch (error) {
+      console.warn('Background validation failed:', error);
+      // Don't show errors for background validation
+    }
+  };
+
+  // Full validation process
+  const performFullValidation = async () => {
+    if (!user) return;
+    
+    setUsingCachedData(false);
+    
+    let profile = await getUserProfile(user.uid);
+    
+    // If no profile exists and this is the admin email, initialize admin profile
+    if (!profile && user.email && isAdminInitializationNeeded(user.email)) {
+      console.log('🔧 Initializing admin profile for:', user.email);
+      profile = await setupAdminProfile(user.uid, user.email, user.displayName || undefined);
+    }
+    
+    setUserProfile(profile);
+
+    // If no user profile exists, check for registration requests
+    let request = null;
+    if (!profile && user.email) {
+      request = await getRegistrationRequestByEmail(user.email);
+      setRegistrationRequest(request);
+    }
+
+    // Cache the fresh data
+    offlineCacheService.cacheProfile(user.uid, profile, request);
+    
+    // Mark as validated if approved/admin
+    if (profile && (profile.status === 'approved' || profile.status === 'admin')) {
+      offlineCacheService.markSessionValidated(user.uid);
     }
   };
 
@@ -66,13 +249,43 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3 text-muted">Checking account status...</p>
+        <p className="mt-3 text-muted">
+          {isOffline ? 'Loading offline data...' : 'Checking account status...'}
+        </p>
       </Container>
     );
   }
 
+  // Offline indicator component
+  const OfflineIndicator = () => {
+    if (!usingCachedData && !isOffline) return null;
+    
+    const cacheAge = user ? offlineCacheService.getCacheAge(user.uid) : null;
+    
+    return (
+      <Alert variant="info" className="mb-3 d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center">
+          <span className="me-2">📱</span>
+          <div>
+            <strong>Offline Mode</strong>
+            {cacheAge !== null && (
+              <small className="d-block text-muted">
+                Data from {cacheAge} minutes ago
+              </small>
+            )}
+          </div>
+        </div>
+        {offlineCacheService.isOnline() && (
+          <Button variant="outline-info" size="sm" onClick={handleRefresh}>
+            🔄 Refresh
+          </Button>
+        )}
+      </Alert>
+    );
+  };
+
   // Show error state
-  if (error) {
+  if (error && !usingCachedData) {
     return (
       <Container className="mt-5">
         <Row className="justify-content-center">
@@ -80,9 +293,16 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
             <Alert variant="danger">
               <h4>Error Loading Account</h4>
               <p>{error}</p>
-              <Button variant="outline-danger" onClick={loadUserProfile}>
-                Try Again
-              </Button>
+              <div className="d-grid gap-2">
+                <Button variant="outline-danger" onClick={loadUserProfile}>
+                  Try Again
+                </Button>
+                {isOffline && (
+                  <small className="text-muted text-center">
+                    Check your internet connection and try again
+                  </small>
+                )}
+              </div>
             </Alert>
           </Col>
         </Row>
@@ -101,6 +321,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     if (registrationRequest && registrationRequest.status === 'denied') {
       return (
         <Container className="mt-5">
+          <OfflineIndicator />
           <Row className="justify-content-center">
             <Col md={8} lg={6}>
               <Card className="text-center border-danger">
@@ -118,7 +339,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
                     <div className="mb-4">
                       <h6>Reason:</h6>
                       <div className="border rounded p-3 bg-light">
-                        <div className="text-dark">
+                        <div className="text-body">
                           {registrationRequest.reviewNotes}
                         </div>
                       </div>
@@ -154,6 +375,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     if (registrationRequest && registrationRequest.status === 'pending') {
       return (
         <Container className="mt-5">
+          <OfflineIndicator />
           <Row className="justify-content-center">
             <Col md={8} lg={6}>
               <Card className="text-center">
@@ -183,9 +405,11 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
                     </p>
                     
                     <div className="d-grid gap-2">
-                      <Button variant="outline-primary" onClick={loadUserProfile}>
-                        🔄 Check Status
-                      </Button>
+                      {!isOffline && (
+                        <Button variant="outline-primary" onClick={loadUserProfile}>
+                          🔄 Check Status
+                        </Button>
+                      )}
                       <Button variant="outline-secondary" onClick={handleLogout}>
                         Sign Out
                       </Button>
@@ -202,6 +426,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     // No profile and no registration request - user needs to request access
     return (
       <Container className="mt-5">
+        <OfflineIndicator />
         <Row className="justify-content-center">
           <Col md={8} lg={6}>
             <Card className="text-center">
@@ -216,9 +441,15 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
                 </p>
                 
                 <div className="d-grid gap-2">
-                  <Link to="/request-access" className="btn btn-primary btn-lg">
-                    📧 Request Access
-                  </Link>
+                  {!isOffline ? (
+                    <Link to="/request-access" className="btn btn-primary btn-lg">
+                      📧 Request Access
+                    </Link>
+                  ) : (
+                    <Alert variant="warning" className="mb-3">
+                      <small>Access request requires internet connection</small>
+                    </Alert>
+                  )}
                   <Button variant="outline-secondary" onClick={handleLogout}>
                     Sign Out
                   </Button>
@@ -236,6 +467,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     case 'pending':
       return (
         <Container className="mt-5">
+          <OfflineIndicator />
           <Row className="justify-content-center">
             <Col md={8} lg={6}>
               <Card className="text-center">
@@ -265,9 +497,11 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
                     </p>
                     
                     <div className="d-grid gap-2">
-                      <Button variant="outline-primary" onClick={loadUserProfile}>
-                        🔄 Check Status
-                      </Button>
+                      {!isOffline && (
+                        <Button variant="outline-primary" onClick={loadUserProfile}>
+                          🔄 Check Status
+                        </Button>
+                      )}
                       <Button variant="outline-secondary" onClick={handleLogout}>
                         Sign Out
                       </Button>
@@ -283,6 +517,7 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
     case 'denied':
       return (
         <Container className="mt-5">
+          <OfflineIndicator />
           <Row className="justify-content-center">
             <Col md={8} lg={6}>
               <Card className="text-center border-danger">
@@ -321,16 +556,45 @@ const AccountStatusGuard = ({ children }: AccountStatusGuardProps) => {
       );
 
     case 'approved':
-      // User is approved, show the app
-      return <>{children}</>;
+      // User is approved, show the app with offline indicator if needed
+      return (
+        <>
+          {(usingCachedData || isOffline || error) && (
+            <Container className="mt-3">
+              <OfflineIndicator />
+              {error && usingCachedData && (
+                <Alert variant="warning" className="mb-3">
+                  <small>{error}</small>
+                </Alert>
+              )}
+            </Container>
+          )}
+          {children}
+        </>
+      );
     
     case 'admin':
-      // Admin users get full access
-      return <>{children}</>;
+      // Admin users get full access with offline indicator if needed
+      return (
+        <>
+          {(usingCachedData || isOffline || error) && (
+            <Container className="mt-3">
+              <OfflineIndicator />
+              {error && usingCachedData && (
+                <Alert variant="warning" className="mb-3">
+                  <small>{error}</small>
+                </Alert>
+              )}
+            </Container>
+          )}
+          {children}
+        </>
+      );
 
     default:
       return (
         <Container className="mt-5">
+          <OfflineIndicator />
           <Row className="justify-content-center">
             <Col md={8} lg={6}>
               <Alert variant="warning">

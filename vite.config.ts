@@ -7,10 +7,18 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Disable service worker in development to avoid HTTPS requirement
-      disable: mode === 'development',
+      // Enable service worker in development for offline testing
+      // Note: This requires HTTPS in development (use `npm run dev -- --https`)
+      disable: false,
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Cache all routes for offline access
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/]
       },
       manifest: {
         name: 'Hearth - Home Inventory',

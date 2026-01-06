@@ -11,9 +11,72 @@ import {
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase/config';
 import { compressAndConvertToBase64 } from '../utils/imageUtils';
-import type { Container, CreateContainerData } from '../types';
+import { getSharedContainers, getUserContainerPermission } from './containerSharingService';
+import { offlineCacheService } from './offlineCacheService';
+import { shortUrlService } from './shortUrlService';
+import type { Container, CreateContainerData, SharedContainer, ContainerWithSharing } from '../types';
 
 const COLLECTION_NAME = 'containers';
+
+/**
+ * Fetch user containers directly from Firestore (internal function)
+ */
+const fetchUserContainersFromFirestore = async (userId: string): Promise<ContainerWithSharing[]> => {
+  // Get owned containers
+  const ownedQuery = query(
+    collection(db, COLLECTION_NAME),
+    where('userId', '==', userId)
+  );
+  
+  const ownedSnapshot = await getDocs(ownedQuery);
+  
+  const ownedContainers: ContainerWithSharing[] = ownedSnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: data.name,
+      description: data.description,
+      location: data.location,
+      imageUrl: data.imageUrl,
+      userId: data.userId,
+      createdAt: data.createdAt.toDate(),
+      updatedAt: data.updatedAt.toDate(),
+      isShared: false,
+    };
+  });
+
+  // Get shared containers - but handle errors gracefully
+  let sharedContainers: SharedContainer[] = [];
+  try {
+    sharedContainers = await getSharedContainers(userId);
+  } catch (error) {
+    console.warn('Error loading shared containers:', error);
+    // Continue with just owned containers if shared containers fail
+  }
+  
+  // Convert shared containers to ContainerWithSharing format
+  const sharedAsContainers: ContainerWithSharing[] = sharedContainers.map(shared => ({
+    id: shared.id,
+    name: shared.name,
+    description: shared.description,
+    location: shared.location,
+    imageUrl: shared.imageUrl,
+    userId: shared.userId, // Keep original owner ID
+    createdAt: shared.createdAt,
+    updatedAt: shared.updatedAt,
+    isShared: true,
+    sharedByName: shared.sharedByName,
+    sharePermission: shared.sharePermission,
+  }));
+  
+  // Combine owned and shared containers
+  const allContainers = [...ownedContainers, ...sharedAsContainers];
+  
+  // Sort by createdAt in JavaScript instead of Firestore
+  allContainers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  
+  return allContainers;
+};
 
 export const createContainer = async (
   userId: string,
@@ -63,6 +126,9 @@ export const createContainer = async (
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), containerData);
     
+    // Clear containers cache since we added a new container
+    offlineCacheService.clearContainersCache();
+    
     return {
       id: docRef.id,
       name: data.name,
@@ -79,43 +145,50 @@ export const createContainer = async (
   }
 };
 
-export const getUserContainers = async (userId: string): Promise<Container[]> => {
+export const getUserContainers = async (userId: string): Promise<ContainerWithSharing[]> => {
   // If Firebase is not configured, return empty array (demo mode)
   if (!isFirebaseConfigured || !db) {
     console.log('📦 Demo mode: No containers yet');
     return [];
   }
 
+  // Check if we should use cached data for fast loading
+  const cachedContainers = offlineCacheService.getCachedContainers(userId);
+  
+  // If offline, use cache if available
+  if (!offlineCacheService.isOnline()) {
+    if (cachedContainers) {
+      console.log('📦 Using cached containers data (offline)', `- ${cachedContainers.length} containers`);
+      return cachedContainers;
+    } else {
+      throw new Error('No internet connection and no cached containers available');
+    }
+  }
+  
+  // If online and we have recent cache (< 2 minutes), use it for speed
+  if (cachedContainers && offlineCacheService.isCacheRecentContainers(userId)) {
+    console.log('📦 Using recent cached containers (fast load)', `- ${cachedContainers.length} containers`);
+    return cachedContainers;
+  }
+
   try {
-    // Try without orderBy first to see if that's the issue
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('userId', '==', userId)
-    );
+    // Fetch fresh data from Firestore
+    const containers = await fetchUserContainersFromFirestore(userId);
     
-    const querySnapshot = await getDocs(q);
-    
-    // Return empty array if no containers found (not an error)
-    const containers = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.name,
-        description: data.description,
-        location: data.location,
-        imageUrl: data.imageUrl,
-        userId: data.userId,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      };
-    });
-    
-    // Sort by createdAt in JavaScript instead of Firestore
-    containers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Cache the results
+    offlineCacheService.cacheContainers(userId, containers);
     
     return containers;
   } catch (error) {
     console.error('Error fetching containers:', error);
+    
+    // Try to use cached data as fallback
+    const cachedContainers = offlineCacheService.getCachedContainers(userId);
+    if (cachedContainers) {
+      console.log('📦 Falling back to cached containers due to error');
+      return cachedContainers;
+    }
+    
     // Only throw for actual network/permission errors
     throw new Error('Unable to connect to your inventory. Please check your internet connection.');
   }
@@ -123,7 +196,8 @@ export const getUserContainers = async (userId: string): Promise<Container[]> =>
 
 export const updateContainer = async (
   containerId: string,
-  data: Partial<CreateContainerData>
+  data: Partial<CreateContainerData>,
+  userId?: string
 ): Promise<void> => {
   // If Firebase is not configured, just return (demo mode)
   if (!isFirebaseConfigured || !db) {
@@ -132,6 +206,14 @@ export const updateContainer = async (
   }
 
   try {
+    // Check if user has permission to edit this container
+    if (userId) {
+      const permission = await getUserContainerPermission(containerId, userId);
+      if (!permission || permission === 'view') {
+        throw new Error('You do not have permission to edit this container');
+      }
+    }
+
     const containerRef = doc(db, COLLECTION_NAME, containerId);
     
     // Handle image processing if a new image is provided
@@ -203,6 +285,11 @@ export const deleteContainer = async (containerId: string, userId?: string): Pro
     
     // Execute all deletions atomically
     await batch.commit();
+    
+    // Clean up short URLs for this container (async, don't block)
+    shortUrlService.cleanupContainerShortUrls(containerId).catch(error => {
+      console.warn('Failed to cleanup container short URLs:', error);
+    });
     
     console.log(`Container ${containerId} and ${itemsSnapshot.docs.length} items deleted`);
   } catch (error) {

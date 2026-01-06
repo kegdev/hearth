@@ -13,6 +13,7 @@ const RegistrationRequestPage = () => {
     email: user?.email || '',
     displayName: user?.displayName || '',
     reason: '',
+    uid: user?.uid || '', // Add UID to form data
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -30,6 +31,7 @@ const RegistrationRequestPage = () => {
         ...prev,
         email: user.email || '',
         displayName: user.displayName || prev.displayName,
+        uid: user.uid || '', // Update UID when user changes
       }));
       checkExistingRequest(user.email);
     }

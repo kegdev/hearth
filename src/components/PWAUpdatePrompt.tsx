@@ -92,9 +92,9 @@ const PWAUpdatePrompt = () => {
           </Toast.Body>
         </Toast>
 
-        {/* Offline Ready Toast */}
+        {/* Offline Ready Toast - Only show in development */}
         <Toast 
-          show={offlineReady} 
+          show={offlineReady && import.meta.env.DEV} 
           onClose={() => setOfflineReady(false)}
           delay={3000}
           autohide

@@ -2,6 +2,7 @@
 
 import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
+import TagCloud from '../components/TagCloud';
 
 const HomePage = () => {
   const { user } = useAuthStore();
@@ -89,6 +90,15 @@ const HomePage = () => {
               </Button>
             </Card.Body>
           </Card>
+        </Col>
+      </Row>
+
+      {/* Tag Cloud Section */}
+      <Row className="mt-5">
+        <Col>
+          <div className="text-center">
+            <TagCloud />
+          </div>
         </Col>
       </Row>
     </Container>

@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppNavbar from './components/Navbar';
+import Footer from './components/Footer';
 import PWAUpdatePrompt from './components/PWAUpdatePrompt';
 import DemoModeIndicator from './components/DemoModeIndicator';
 import InventoryStats from './components/InventoryStats';
@@ -15,15 +16,23 @@ import { useThemeStore } from './store/themeStore';
 import { initializeEmailJS } from './services/emailNotificationService';
 import './utils/validateFirebase'; // Run Firebase validation in development
 
-// Lazy load pages for better performance
-const HomePage = lazy(() => import('./pages/HomePage'));
-const SimpleLoginPage = lazy(() => import('./pages/SimpleLoginPage'));
-const RegistrationRequestPage = lazy(() => import('./pages/RegistrationRequestPage'));
+// Import critical pages directly for offline support
+import HomePage from './pages/HomePage';
+import SimpleLoginPage from './pages/SimpleLoginPage';
+import RegistrationRequestPage from './pages/RegistrationRequestPage';
+import ContainersPage from './pages/ContainersPage';
+import ContainerDetailPage from './pages/ContainerDetailPage';
+import ItemsPage from './pages/ItemsPage';
+import ItemDetailPage from './pages/ItemDetailPage';
+import SearchResultsPage from './pages/SearchResultsPage';
+import ShortUrlRedirectPage from './pages/ShortUrlRedirectPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ContactPage from './pages/ContactPage';
+import AboutPage from './pages/AboutPage';
+
+// Lazy load admin page only (less critical for offline use)
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
-const ContainersPage = lazy(() => import('./pages/ContainersPage'));
-const ContainerDetailPage = lazy(() => import('./pages/ContainerDetailPage'));
-const ItemsPage = lazy(() => import('./pages/ItemsPage'));
-const ItemDetailPage = lazy(() => import('./pages/ItemDetailPage'));
 
 // Loading component
 const PageLoader = () => (
@@ -67,61 +76,75 @@ function App() {
               <AppNavbar />
               <DemoModeIndicator />
               <main className="py-3 flex-grow-1 d-flex flex-column">
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/login" element={<SimpleLoginPage />} />
-                    <Route path="/request-access" element={<RegistrationRequestPage />} />
-                    <Route path="/*" element={
-                      <AccountStatusGuard>
-                        <Routes>
-                          <Route 
-                            path="/admin" 
-                            element={
-                              <ProtectedRoute>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<SimpleLoginPage />} />
+                  <Route path="/request-access" element={<RegistrationRequestPage />} />
+                  <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/q/:shortCode" element={<ShortUrlRedirectPage />} />
+                  <Route path="/*" element={
+                    <AccountStatusGuard>
+                      <Routes>
+                        <Route 
+                          path="/admin" 
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<PageLoader />}>
                                 <AdminDashboardPage />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/containers" 
-                            element={
-                              <ProtectedRoute>
-                                <ContainersPage />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/container/:containerId" 
-                            element={
-                              <ProtectedRoute>
-                                <ContainerDetailPage />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/items" 
-                            element={
-                              <ProtectedRoute>
-                                <ItemsPage />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/item/:itemId" 
-                            element={
-                              <ProtectedRoute>
-                                <ItemDetailPage />
-                              </ProtectedRoute>
-                            } 
-                          />
+                              </Suspense>
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/containers" 
+                          element={
+                            <ProtectedRoute>
+                              <ContainersPage />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/container/:containerId" 
+                          element={
+                            <ProtectedRoute>
+                              <ContainerDetailPage />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/items" 
+                          element={
+                            <ProtectedRoute>
+                              <ItemsPage />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/item/:itemId" 
+                          element={
+                            <ProtectedRoute>
+                              <ItemDetailPage />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/search" 
+                          element={
+                            <ProtectedRoute>
+                              <SearchResultsPage />
+                            </ProtectedRoute>
+                          } 
+                        />
                         </Routes>
                       </AccountStatusGuard>
                     } />
                   </Routes>
-                </Suspense>
               </main>
               <InventoryStats />
+              <Footer />
               <PWAUpdatePrompt />
             </div>
           </Router>

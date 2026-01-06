@@ -3,6 +3,8 @@ import {
   addDoc,
   getDocs,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -50,6 +52,7 @@ export const submitRegistrationRequest = async (
       email: data.email.toLowerCase().trim(),
       displayName: data.displayName?.trim() || null,
       reason: data.reason.trim(),
+      uid: data.uid, // Add UID to the request
       status: 'pending' as const,
       requestedAt: Timestamp.fromDate(now),
       createdAt: Timestamp.fromDate(now),
@@ -181,15 +184,39 @@ export const approveRegistrationRequest = async (
 
   try {
     const now = new Date();
-    const requestRef = doc(db, REGISTRATION_REQUESTS_COLLECTION, requestId);
     
-    await updateDoc(requestRef, {
-      status: 'approved',
-      reviewedAt: Timestamp.fromDate(now),
-      reviewedBy: adminUserId,
-      reviewNotes: notes || null,
+    // First, get the registration request to extract user details
+    const requestRef = doc(db, REGISTRATION_REQUESTS_COLLECTION, requestId);
+    const requestDoc = await getDoc(requestRef);
+    
+    if (!requestDoc.exists()) {
+      throw new Error('Registration request not found');
+    }
+    
+    const requestData = requestDoc.data();
+    
+    // Create user profile in userProfiles collection using the UID from the request
+    const profileData = {
+      uid: requestData.uid,
+      email: requestData.email.toLowerCase().trim(),
+      displayName: requestData.displayName || null,
+      status: 'approved' as const,
+      isAdmin: false,
+      approvedAt: Timestamp.fromDate(now),
+      approvedBy: adminUserId,
+      approvedNotes: notes || null,
+      createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
-    });
+    };
+    
+    // Create profile document using the user's UID as the document ID
+    await setDoc(doc(db, USER_PROFILES_COLLECTION, requestData.uid), profileData);
+    
+    // Delete the registration request after successful approval
+    await deleteDoc(requestRef);
+    
+    console.log(`✅ Approved registration and created profile for: ${requestData.email}`);
+    console.log(`🗑️ Deleted registration request: ${requestId}`);
   } catch (error) {
     console.error('Error approving registration request:', error);
     throw new Error('Failed to approve registration request');
@@ -402,7 +429,8 @@ export const initializeAdminProfile = async (
       updatedAt: Timestamp.fromDate(now),
     };
 
-    await addDoc(collection(db, USER_PROFILES_COLLECTION), profileData);
+    // Use setDoc with the user's UID as the document ID
+    await setDoc(doc(db, USER_PROFILES_COLLECTION, uid), profileData);
     
     return {
       uid,

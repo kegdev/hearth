@@ -81,6 +81,7 @@ export interface CreateRegistrationRequestData {
   email: string;
   displayName?: string;
   reason: string;
+  uid: string; // Add UID to capture user's Firebase Auth UID
 }
 
 export interface CreateContainerData {
@@ -116,4 +117,45 @@ export interface CreateTagData {
 export interface CreateCategoryData {
   name: string;
   parentId?: string;
+}
+
+// Container Sharing Types
+export type SharePermission = 'view' | 'edit' | 'admin';
+
+export interface ContainerShare {
+  id: string;
+  containerId: string;
+  ownerId: string; // Container owner's UID
+  sharedWithId: string; // User being shared with
+  sharedWithEmail: string; // For display purposes
+  sharedWithName?: string; // Display name
+  permission: SharePermission;
+  sharedAt: Date;
+  sharedBy: string; // UID of user who created the share
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SharedContainer extends Container {
+  sharePermission: SharePermission;
+  sharedBy: string;
+  sharedByName?: string;
+  sharedAt: Date;
+}
+
+export interface ContainerWithSharing extends Container {
+  isShared?: boolean;
+  sharedByName?: string;
+  sharePermission?: SharePermission;
+}
+
+export interface CreateContainerShareData {
+  containerId: string;
+  targetUserEmail: string;
+  permission: SharePermission;
+}
+
+export interface ContainerWithShares extends Container {
+  shares?: ContainerShare[];
+  isShared?: boolean;
 }

@@ -39,6 +39,14 @@ if (isFirebaseConfigured) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+    
+    // Add connection resilience settings
+    if (db) {
+      // Disable offline persistence in development to avoid connection issues
+      if (import.meta.env.DEV) {
+        console.log('🔧 Development mode: Firebase offline persistence disabled');
+      }
+    }
   } catch (error) {
     console.warn('Firebase initialization failed:', error);
   }

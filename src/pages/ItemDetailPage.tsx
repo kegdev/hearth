@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
-import { getUserItems, updateItem } from '../services/itemService';
+import { updateItem, getItemById } from '../services/itemService';
 import { getUserContainers } from '../services/containerService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
@@ -55,16 +55,15 @@ const ItemDetailPage = () => {
     try {
       setLoading(true);
       
-      // Load all data in parallel
-      const [items, userContainers, userTags, userCategories] = await Promise.all([
-        getUserItems(user.uid),
+      // Load item directly by ID (works for shared container items)
+      const [currentItem, userContainers, userTags, userCategories] = await Promise.all([
+        getItemById(itemId),
         getUserContainers(user.uid),
         getUserTags(user.uid),
         getUserCategories(user.uid)
       ]);
       
-      const currentItem = items.find(i => i.id === itemId);
-      setItem(currentItem || null);
+      setItem(currentItem);
       setContainers(userContainers);
       setTags(userTags);
       setCategories(userCategories);
@@ -172,6 +171,9 @@ const ItemDetailPage = () => {
         <Row>
           <Col className="text-center mt-5">
             <h3>Item not found</h3>
+            <p className="text-muted">
+              This item may not exist or you may not have permission to access it.
+            </p>
             <Link to="/items" className="btn btn-primary">
               Back to Items
             </Link>
@@ -592,6 +594,8 @@ const ItemDetailPage = () => {
         onHide={() => setShowQRModal(false)}
         title={item.name}
         url={`/item/${item.id}`}
+        type="item"
+        entityId={item.id}
       />
     </Container>
   );

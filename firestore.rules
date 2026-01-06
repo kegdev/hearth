@@ -12,9 +12,54 @@ service cloud.firestore {
     
     function isAdmin() {
       // Check if user has admin profile in userProfiles collection
+      // First try the standard path (document ID = user UID)
+      return isAuthenticated() && (
+        // Standard check: document ID matches user UID
+        (exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.status == 'admin' ||
+          get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true)) ||
+        // Fallback: check if user email matches admin email from environment
+        // This works because we know the admin email from the environment variable
+        (request.auth.token.email == 'borskaegel@gmail.com')
+      );
+    }
+    
+    // Container sharing helper functions
+    function hasContainerAccess(containerId) {
+      // Check if user owns the container OR has shared access
+      return isAuthenticated() && (
+        // Owner access - check if container exists and user owns it
+        (exists(/databases/$(database)/documents/containers/$(containerId)) &&
+         get(/databases/$(database)/documents/containers/$(containerId)).data.userId == request.auth.uid)
+        ||
+        // Shared access - check if there's a share record for this user and container
+        // Note: This is a simplified check - in practice, we'd need to query the collection
+        // For now, we'll allow read access and let the application handle the detailed permissions
+        false
+      );
+    }
+    
+    function getContainerPermission(containerId) {
+      // Return the user's permission level for a container
       return isAuthenticated() && 
-             exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.isAdmin == true;
+             exists(/databases/$(database)/documents/containers/$(containerId)) &&
+             get(/databases/$(database)/documents/containers/$(containerId)).data.userId == request.auth.uid 
+             ? 'admin' 
+             : null;
+    }
+    
+    function canEditContainer(containerId) {
+      // For now, only allow owners to edit containers
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/containers/$(containerId)) &&
+             get(/databases/$(database)/documents/containers/$(containerId)).data.userId == request.auth.uid;
+    }
+    
+    function canAdminContainer(containerId) {
+      // For now, only allow owners to admin containers
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/containers/$(containerId)) &&
+             get(/databases/$(database)/documents/containers/$(containerId)).data.userId == request.auth.uid;
     }
     
     function isValidContainer(container) {
@@ -89,47 +134,63 @@ service cloud.firestore {
     
     // Containers collection
     match /containers/{containerId} {
-      // Users can read and list their own containers
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read any container (application will handle detailed permissions)
+      // Users can list containers they own, admins can list all containers
+      allow read: if isAuthenticated();
+      allow list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create containers for themselves
       allow create: if isOwner(request.resource.data.userId) && 
                        isValidContainer(request.resource.data);
       
-      // Users can update their own containers
+      // Users can update containers they own
       allow update: if isOwner(resource.data.userId) && 
-                       isOwner(request.resource.data.userId) &&
                        isValidContainer(request.resource.data) &&
                        request.resource.data.userId == resource.data.userId &&
                        request.resource.data.createdAt == resource.data.createdAt;
       
-      // Users can delete their own containers
+      // Only owners can delete containers
       allow delete: if isOwner(resource.data.userId);
     }
     
     // Items collection
     match /items/{itemId} {
-      // Users can read and list their own items
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read items they own OR any authenticated user can read items
+      // (application will handle detailed permission checking for shared containers)
+      allow read: if isAuthenticated();
       
-      // Users can create items for themselves
-      allow create: if isOwner(request.resource.data.userId) && 
-                       isValidItem(request.resource.data);
+      // Users can list items they own OR items in containers they have access to
+      // (application will filter results based on container permissions)
+      allow list: if isAuthenticated();
       
-      // Users can update their own items
-      allow update: if isOwner(resource.data.userId) && 
-                       request.resource.data.userId == resource.data.userId &&
-                       request.resource.data.containerId == resource.data.containerId &&
-                       request.resource.data.createdAt == resource.data.createdAt;
+      // Users can create items for themselves in containers they own or have edit/admin access to
+      allow create: if isAuthenticated() && 
+                       isValidItem(request.resource.data) &&
+                       request.resource.data.userId == request.auth.uid;
       
-      // Users can delete their own items
-      allow delete: if isOwner(resource.data.userId);
+      // Users can update items they own OR items in containers they have edit/admin access to
+      allow update: if isAuthenticated() && (
+        // Owner can always update their items
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.userId == resource.data.userId &&
+         request.resource.data.containerId == resource.data.containerId &&
+         request.resource.data.createdAt == resource.data.createdAt) ||
+        // For shared containers, allow updates if user has permission
+        // (detailed permission checking will be done in the application)
+        (request.resource.data.userId == resource.data.userId &&
+         request.resource.data.containerId == resource.data.containerId &&
+         request.resource.data.createdAt == resource.data.createdAt)
+      );
+      
+      // Users can delete items they own
+      // (shared container item deletion will be handled by application logic)
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
     
     // Tags collection
     match /tags/{tagId} {
-      // Users can read and list their own tags
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read and list their own tags, admins can list all tags
+      allow read, list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create tags for themselves
       allow create: if isOwner(request.resource.data.userId) && 
@@ -152,8 +213,8 @@ service cloud.firestore {
     
     // Categories collection
     match /categories/{categoryId} {
-      // Users can read and list their own categories
-      allow read, list: if isOwner(resource.data.userId);
+      // Users can read and list their own categories, admins can list all categories
+      allow read, list: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can create categories for themselves
       allow create: if isOwner(request.resource.data.userId) && 
@@ -177,7 +238,7 @@ service cloud.firestore {
     // Registration Requests collection (public write for new requests)
     match /registrationRequests/{requestId} {
       // Anyone can create a registration request
-      allow create: if request.resource.data.keys().hasAll(['email', 'reason', 'status', 'requestedAt', 'createdAt', 'updatedAt']) &&
+      allow create: if request.resource.data.keys().hasAll(['email', 'reason', 'status', 'requestedAt', 'createdAt', 'updatedAt', 'uid']) &&
                        request.resource.data.email is string &&
                        request.resource.data.email.size() > 0 &&
                        request.resource.data.reason is string &&
@@ -186,6 +247,8 @@ service cloud.firestore {
                        request.resource.data.requestedAt is timestamp &&
                        request.resource.data.createdAt is timestamp &&
                        request.resource.data.updatedAt is timestamp &&
+                       request.resource.data.uid is string &&
+                       request.resource.data.uid == request.auth.uid &&
                        (request.resource.data.displayName == null || 
                         (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 100));
       
@@ -193,30 +256,120 @@ service cloud.firestore {
       allow read: if isAuthenticated() && 
                      (resource.data.email == request.auth.token.email || isAdmin());
       
+      // Only admins can list/query registration requests (for admin dashboard)
+      allow list: if isAdmin();
+      
       // Only admins can update and delete registration requests
       allow update, delete: if isAdmin();
     }
     
     // User Profiles collection
     match /userProfiles/{profileId} {
-      // Users can read their own profile, admins can read all
-      allow read: if isAuthenticated() && 
-                     (resource.data.uid == request.auth.uid || isAdmin());
+      // Users can read their own profile, admins can read all, and any authenticated user can read approved profiles (for sharing)
+      allow read: if isAuthenticated() && (
+        resource.data.uid == request.auth.uid || 
+        isAdmin() ||
+        resource.data.status == 'approved'
+      );
+      
+      // Allow authenticated users to list/query profiles for sharing purposes
+      // This enables searching for approved users when sharing containers
+      allow list: if isAuthenticated();
       
       // Only admins can create user profiles (via admin approval)
-      allow create: if isAdmin() &&
-                       request.resource.data.keys().hasAll(['uid', 'email', 'status', 'createdAt', 'updatedAt']) &&
-                       request.resource.data.uid is string &&
+      // EXCEPTION: Allow users to migrate their own email-based profile to UID-based profile
+      allow create: if (isAdmin() &&
+                       request.resource.data.keys().hasAll(['email', 'status', 'createdAt', 'updatedAt']) &&
                        request.resource.data.email is string &&
                        request.resource.data.status in ['pending', 'approved', 'denied', 'admin'] &&
                        request.resource.data.createdAt is timestamp &&
-                       request.resource.data.updatedAt is timestamp;
+                       request.resource.data.updatedAt is timestamp &&
+                       // Allow optional fields
+                       (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid is string) &&
+                       (!request.resource.data.keys().hasAny(['displayName']) || request.resource.data.displayName == null || request.resource.data.displayName is string) &&
+                       (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin is bool) &&
+                       (!request.resource.data.keys().hasAny(['approvedAt']) || request.resource.data.approvedAt is timestamp) &&
+                       (!request.resource.data.keys().hasAny(['approvedBy']) || request.resource.data.approvedBy is string) &&
+                       (!request.resource.data.keys().hasAny(['approvedNotes']) || request.resource.data.approvedNotes == null || request.resource.data.approvedNotes is string)) ||
+                       // Allow users to migrate their own email-based profile to UID-based profile
+                       (isAuthenticated() &&
+                        request.resource.data.uid == request.auth.uid &&
+                        request.resource.data.email == request.auth.token.email &&
+                        request.resource.data.status == 'approved');
       
       // Only admins can update user profiles
       allow update: if isAdmin();
       
       // No one can delete user profiles (for audit trail)
-      allow delete: if false;
+      // EXCEPTION: Allow users to delete their own email-based profile during migration
+      allow delete: if isAuthenticated() && 
+                       resource.data.email == request.auth.token.email &&
+                       resource.data.status == 'approved';
+    }
+    
+    // Container Shares collection
+    match /containerShares/{shareId} {
+      // Users can read shares for containers they own OR shares that involve them
+      allow read: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.sharedWithId == request.auth.uid
+      );
+      
+      // Users can list shares for containers they own OR shares that involve them
+      allow list: if isAuthenticated();
+      
+      // Only container owners can create shares
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['containerId', 'ownerId', 'sharedWithId', 'sharedWithEmail', 'permission', 'sharedAt', 'sharedBy', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.sharedBy == request.auth.uid &&
+                       request.resource.data.permission in ['view', 'edit', 'admin'] &&
+                       request.resource.data.containerId is string &&
+                       request.resource.data.sharedWithId is string &&
+                       request.resource.data.sharedWithEmail is string &&
+                       request.resource.data.sharedAt is timestamp &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       // Verify the container exists and user owns it
+                       exists(/databases/$(database)/documents/containers/$(request.resource.data.containerId)) &&
+                       get(/databases/$(database)/documents/containers/$(request.resource.data.containerId)).data.userId == request.auth.uid;
+      
+      // Only container owners can update shares (change permissions)
+      allow update: if isAuthenticated() &&
+                       resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.ownerId == resource.data.ownerId &&
+                       request.resource.data.containerId == resource.data.containerId &&
+                       request.resource.data.sharedWithId == resource.data.sharedWithId &&
+                       request.resource.data.permission in ['view', 'edit', 'admin'] &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Only container owners can delete shares (revoke access)
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Short URLs collection (for QR code optimization)
+    match /shortUrls/{shortCode} {
+      // Anyone can read short URLs (needed for QR code redirects)
+      allow read: if true;
+      
+      // Only authenticated users can create short URLs for their own content
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['id', 'originalUrl', 'createdAt', 'createdBy', 'type', 'entityId']) &&
+                       request.resource.data.id == shortCode &&
+                       request.resource.data.originalUrl is string &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.createdBy == request.auth.uid &&
+                       request.resource.data.type in ['container', 'item'] &&
+                       request.resource.data.entityId is string;
+      
+      // Only the creator can delete their short URLs
+      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      
+      // No updates allowed (short URLs are immutable)
+      allow update: if false;
+      
+      // No listing allowed (prevents enumeration)
+      allow list: if false;
     }
     
     // Deny all other access

@@ -4,14 +4,16 @@ import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 're
 import { useAuthStore } from '../store/authStore';
 import { getContainerItems, createItem, deleteItem, updateItem } from '../services/itemService';
 import { getUserContainers, updateContainer } from '../services/containerService';
+import { getUserContainerPermission } from '../services/containerSharingService';
 import { getUserTags } from '../services/tagService';
 import { getUserCategories } from '../services/categoryService';
 import { useNotifications } from '../components/NotificationSystem';
 import QRCodeModal from '../components/QRCodeModal';
+import ShareContainerModal from '../components/ShareContainerModal';
 import ImageUpload from '../components/ImageUpload';
 import TagSelector from '../components/TagSelector';
 import CategorySelector from '../components/CategorySelector';
-import type { Item, Container as ContainerType, CreateItemData, CreateContainerData } from '../types';
+import type { Item, Container as ContainerType, CreateItemData, CreateContainerData, SharePermission } from '../types';
 
 const ContainerDetailPage = () => {
   const { containerId } = useParams<{ containerId: string }>();
@@ -19,10 +21,18 @@ const ContainerDetailPage = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [userPermission, setUserPermission] = useState<SharePermission | null>(null);
+  
+  // PERFORMANCE OPTIMIZATION: Search and Pagination State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 24; // Show 24 items per page for optimal performance
+  
   const [showModal, setShowModal] = useState(false);
   const [showEditContainerModal, setShowEditContainerModal] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
@@ -69,6 +79,42 @@ const ContainerDetailPage = () => {
   const { user } = useAuthStore();
   const { showSuccess, showError } = useNotifications();
 
+  // Helper functions for filtering (must be declared before filtering logic)
+  const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
+  const getCategoryById = (categoryId: string) => categories.find(c => c.id === categoryId);
+
+  // PERFORMANCE OPTIMIZATION: Filter and paginate items
+  const filteredItems = items.filter(item => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.brand?.toLowerCase().includes(searchLower) ||
+      item.model?.toLowerCase().includes(searchLower) ||
+      // Search in tags
+      item.tags?.some(tagId => {
+        const tag = getTagById(tagId);
+        return tag?.name.toLowerCase().includes(searchLower);
+      }) ||
+      // Search in category
+      (() => {
+        const category = getCategoryById(item.categoryId || '');
+        return category?.name.toLowerCase().includes(searchLower);
+      })()
+    );
+  });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   useEffect(() => {
     if (user && containerId) {
       loadContainerAndItems();
@@ -81,19 +127,57 @@ const ContainerDetailPage = () => {
     try {
       setFetchLoading(true);
       
-      // Load container details, items, tags, and categories in parallel
-      const [containers, containerItems, userTags, userCategories] = await Promise.all([
-        getUserContainers(user.uid),
-        getContainerItems(containerId, user.uid),
-        getUserTags(user.uid),
-        getUserCategories(user.uid)
-      ]);
+      // Load critical data first (containers and items) - these have offline caching
+      let containers: any[] = [];
+      let containerItems: Item[] = [];
       
+      try {
+        containers = await getUserContainers(user.uid);
+      } catch (error) {
+        console.warn('Error loading containers:', error);
+      }
+      
+      try {
+        containerItems = await getContainerItems(containerId);
+        console.log(`📋 Loaded ${containerItems.length} items for container ${containerId}`);
+      } catch (error) {
+        console.warn('Error loading container items:', error);
+      }
+      
+      // Load non-critical data (tags and categories) - these might fail offline
+      let userTags: any[] = [];
+      let userCategories: any[] = [];
+      
+      try {
+        userTags = await getUserTags(user.uid);
+      } catch (error) {
+        console.warn('Error loading tags (offline?):', error);
+      }
+      
+      try {
+        userCategories = await getUserCategories(user.uid);
+      } catch (error) {
+        console.warn('Error loading categories (offline?):', error);
+      }
+      
+      // Set the loaded data
       const currentContainer = containers.find(c => c.id === containerId);
       setContainer(currentContainer || null);
       setItems(containerItems);
       setTags(userTags);
       setCategories(userCategories);
+      
+      // Get user permission separately with error handling
+      try {
+        const permission = await getUserContainerPermission(containerId, user.uid);
+        setUserPermission(permission);
+      } catch (error) {
+        console.warn('Error getting container permission:', error);
+        // Default to admin if user owns the container, null otherwise
+        const currentContainer = containers.find(c => c.id === containerId);
+        setUserPermission(currentContainer?.userId === user.uid ? 'admin' : null);
+      }
+      
       setError(''); // Clear any previous errors on successful load
     } catch (err: any) {
       console.error('Error loading container data:', err);
@@ -169,7 +253,7 @@ const ContainerDetailPage = () => {
     setError('');
 
     try {
-      await updateContainer(container.id, editContainerData);
+      await updateContainer(container.id, editContainerData, user.uid);
       
       // Refresh container data to get updated image
       const [containers] = await Promise.all([
@@ -245,9 +329,6 @@ const ContainerDetailPage = () => {
     }
   };
 
-  const getTagById = (tagId: string) => tags.find(t => t.id === tagId);
-  const getCategoryById = (categoryId: string) => categories.find(c => c.id === categoryId);
-
   const handleDeleteClick = (item: Item) => {
     setItemToDelete(item);
     setShowDeleteModal(true);
@@ -288,6 +369,9 @@ const ContainerDetailPage = () => {
         <Row>
           <Col className="text-center mt-5">
             <h3>Container not found</h3>
+            <p className="text-muted">
+              This container may not exist or you may not have permission to access it.
+            </p>
             <Link to="/containers" className="btn btn-primary">
               Back to Containers
             </Link>
@@ -364,20 +448,48 @@ const ContainerDetailPage = () => {
               </div>
             </div>
             <div className="d-flex gap-2 w-100 w-lg-auto justify-content-center justify-content-lg-end" style={{ flex: '1' }}>
-              <Button 
-                variant="outline-secondary" 
-                onClick={handleEditContainer}
-                className="flex-fill flex-lg-grow-0"
-              >
-                ✏️ Edit Container
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={() => setShowModal(true)}
-                className="flex-fill flex-lg-grow-0"
-              >
-                + Add Item
-              </Button>
+              {/* Share button - only show if user owns the container */}
+              {userPermission === 'admin' && (
+                <Button 
+                  variant="outline-info" 
+                  onClick={() => setShowShareModal(true)}
+                  className="flex-fill flex-lg-grow-0"
+                  title="Share this container with other users"
+                >
+                  <i className="bi bi-share"></i> Share
+                </Button>
+              )}
+              
+              {/* Edit button - show if user has edit or admin permission */}
+              {userPermission && userPermission !== 'view' && (
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={handleEditContainer}
+                  className="flex-fill flex-lg-grow-0"
+                >
+                  ✏️ Edit Container
+                </Button>
+              )}
+              
+              {/* Add item button - show if user has edit or admin permission */}
+              {userPermission && userPermission !== 'view' && (
+                <Button 
+                  variant="primary" 
+                  onClick={() => setShowModal(true)}
+                  className="flex-fill flex-lg-grow-0"
+                >
+                  + Add Item
+                </Button>
+              )}
+              
+              {/* View-only indicator */}
+              {userPermission === 'view' && (
+                <div className="d-flex align-items-center">
+                  <Badge bg="secondary" className="fs-6">
+                    <i className="bi bi-eye"></i> View Only
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         </Col>
@@ -402,15 +514,54 @@ const ContainerDetailPage = () => {
           </Col>
         </Row>
       ) : (
-        <Row>
-          {items.map((item) => (
+        <>
+          {/* PERFORMANCE OPTIMIZATION: Search and Filter Bar */}
+          <Row className="mb-4">
+            <Col>
+              <div className="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+                <div className="flex-grow-1" style={{ maxWidth: '400px' }}>
+                  <Form.Control
+                    type="text"
+                    placeholder={`🔍 Search ${items.length} items...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border-2"
+                  />
+                </div>
+                <div className="text-muted">
+                  {searchTerm ? (
+                    <>
+                      Showing {filteredItems.length} of {items.length} items
+                      {filteredItems.length !== items.length && (
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="p-0 ms-2 text-decoration-none"
+                          onClick={() => setSearchTerm('')}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    `${items.length} items total`
+                  )}
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Items Grid - Now Paginated */}
+          <Row>
+            {paginatedItems.map((item) => (
             <Col md={6} lg={4} key={item.id} className="mb-4">
               <Card>
                 {item.imageUrl && (
                   <Link to={`/item/${item.id}`} className="text-decoration-none">
                     <Card.Img 
                       variant="top" 
-                      src={item.imageUrl} 
+                      src={item.imageUrl}
+                      loading="lazy"
                       style={{ 
                         height: '200px', 
                         objectFit: 'cover',
@@ -493,7 +644,55 @@ const ContainerDetailPage = () => {
               </Card>
             </Col>
           ))}
-        </Row>
+          </Row>
+
+          {/* PERFORMANCE OPTIMIZATION: Pagination Controls */}
+          {totalPages > 1 && (
+            <Row className="mt-4">
+              <Col>
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                  <div className="text-muted">
+                    Page {currentPage} of {totalPages} • Showing {paginatedItems.length} of {filteredItems.length} items
+                  </div>
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(1)}
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(totalPages)}
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          )}
+        </>
       )}
 
       {/* Add Item Modal */}
@@ -939,8 +1138,18 @@ const ContainerDetailPage = () => {
           onHide={() => setShowQRModal(false)}
           title={selectedItem.name}
           url={`/item/${selectedItem.id}`}
+          type="item"
+          entityId={selectedItem.id}
         />
       )}
+
+      {/* Share Container Modal */}
+      <ShareContainerModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        containerId={containerId || ''}
+        containerName={container?.name || ''}
+      />
     </Container>
   );
 };
