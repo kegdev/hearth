@@ -116,6 +116,8 @@ const PrivacyPolicyPage = () => {
             <section className="mb-4">
               <h2>4. Data Security</h2>
               <p>We implement comprehensive security measures to protect your information:</p>
+              
+              <h3>4.1 Technical Security</h3>
               <ul>
                 <li><strong>Encryption:</strong> All data is encrypted in transit and at rest using industry-standard encryption</li>
                 <li><strong>Access Controls:</strong> Strict access controls limit who can access your data</li>
@@ -123,6 +125,16 @@ const PrivacyPolicyPage = () => {
                 <li><strong>Firestore Rules:</strong> Database-level security rules enforce proper access permissions</li>
                 <li><strong>Regular Updates:</strong> We regularly update our security measures and monitor for threats</li>
               </ul>
+
+              <h3>4.2 Web Application Security</h3>
+              <ul>
+                <li><strong>Content Security Policy (CSP):</strong> Prevents cross-site scripting (XSS) attacks</li>
+                <li><strong>Permissions Policy:</strong> Restricts access to unnecessary browser APIs and device features</li>
+                <li><strong>Security Headers:</strong> Comprehensive HTTP security headers protect against common attacks</li>
+                <li><strong>Frame Protection:</strong> Prevents the application from being embedded in malicious frames</li>
+                <li><strong>MIME Protection:</strong> Prevents content type confusion attacks</li>
+              </ul>
+
               <p>
                 However, no method of transmission over the internet or electronic storage is 100% secure. 
                 While we strive to protect your personal information, we cannot guarantee absolute security.
