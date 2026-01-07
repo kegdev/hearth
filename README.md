@@ -7,6 +7,7 @@ A modern Progressive Web Application for organizing and managing your home inven
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 ![Firebase](https://img.shields.io/badge/Firebase-12.6.0-orange)
 ![PWA](https://img.shields.io/badge/PWA-Enabled-purple)
+![OAuth Verified](https://img.shields.io/badge/Google%20OAuth-Verified-green)
 
 ## 🎯 Overview
 
@@ -192,6 +193,7 @@ npm run test:ci      # CI-friendly test run
 ### **Google OAuth Integration**
 - **Limited Scope Access** - Only requests essential scopes (openid, email, profile)
 - **Google API Services Compliance** - Adheres to Google API Services User Data Policy
+- **OAuth Dev Verification** - ✅ Approved by Google for brand verification (Project ID: hearth-db)
 - **No Data Sharing** - Google user data never shared with third parties
 - **Secure Storage** - All user data encrypted and stored securely via Firebase
 - **User Control** - Users can revoke access through Google Account settings

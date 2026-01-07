@@ -138,6 +138,7 @@ const AboutPage = () => {
                     <ul>
                       <li>End-to-end encryption for all data</li>
                       <li>Secure Google OAuth authentication</li>
+                      <li>Google OAuth Dev Verification approved</li>
                       <li>Database-level access controls</li>
                       <li>Regular security updates and monitoring</li>
                     </ul>
