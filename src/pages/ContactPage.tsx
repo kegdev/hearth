@@ -56,7 +56,7 @@ const ContactPage = () => {
                         <h4>🏠 Hearth</h4>
                         <p>Home Inventory Management</p>
                         <p><strong>Website:</strong> <a href="https://hearth.keg.dev" className="text-decoration-none">hearth.keg.dev</a></p>
-                        <p><strong>Version:</strong> 1.3.0</p>
+                        <p><strong>Version:</strong> 1.4.0</p>
                         <Badge bg="success">Production Ready</Badge>
                       </Card.Body>
                     </Card>
@@ -123,8 +123,21 @@ const ContactPage = () => {
                 <div className="mb-3">
                   <h4>Can I export my inventory data?</h4>
                   <p>
-                    Yes, administrators can export inventory data in JSON format through the admin dashboard. 
-                    This includes all containers, items, and associated metadata.
+                    Yes! You can export your inventory data in multiple formats:
+                  </p>
+                  <ul>
+                    <li><strong>Personal Export:</strong> Use the Control Panel (⚙️ menu) to export your own data as Excel spreadsheets or JSON files</li>
+                    <li><strong>Admin Export:</strong> Administrators can export all user data through the admin dashboard</li>
+                    <li><strong>Excel Format:</strong> Business-friendly multi-sheet workbooks with summaries, statistics, and readable data</li>
+                    <li><strong>JSON Format:</strong> Technical format for data migration or backup purposes</li>
+                  </ul>
+                </div>
+
+                <div className="mb-3">
+                  <h4>How do I access the Control Panel?</h4>
+                  <p>
+                    Click on your user icon (🧑) in the top navigation bar and select "Control Panel" from the dropdown menu. 
+                    On mobile devices, the Control Panel link appears directly in the main navigation menu for easy access.
                   </p>
                 </div>
               </section>

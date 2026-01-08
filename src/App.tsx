@@ -30,6 +30,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ContactPage from './pages/ContactPage';
 import AboutPage from './pages/AboutPage';
+import UserControlPanelPage from './pages/UserControlPanelPage';
 
 // Lazy load admin page only (less critical for offline use)
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
@@ -95,6 +96,14 @@ function App() {
                               <Suspense fallback={<PageLoader />}>
                                 <AdminDashboardPage />
                               </Suspense>
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/control-panel" 
+                          element={
+                            <ProtectedRoute>
+                              <UserControlPanelPage />
                             </ProtectedRoute>
                           } 
                         />

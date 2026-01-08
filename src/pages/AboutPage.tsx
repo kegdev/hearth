@@ -23,7 +23,7 @@ const AboutPage = () => {
                 <h2>✨ What is Hearth?</h2>
                 <p>
                   Hearth is a comprehensive Progressive Web Application (PWA) that transforms how you manage your home inventory. 
-                  Whether you're organizing for insurance purposes, moving to a new home, or simply want to know what you own and where it is, 
+                  Whether you're organizing for personal records, moving to a new home, or simply want to know what you own and where it is, 
                   Hearth provides the tools you need.
                 </p>
                 <p>
@@ -83,6 +83,32 @@ const AboutPage = () => {
                           <li>Real-time search suggestions</li>
                           <li>Search by name, brand, model, location</li>
                           <li>Find items in shared containers</li>
+                        </ul>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={6}>
+                    <Card className="mb-3 h-100">
+                      <Card.Body>
+                        <h4>📊 Data Export</h4>
+                        <ul>
+                          <li>Export inventory to Excel spreadsheets</li>
+                          <li>Business-friendly multi-sheet workbooks</li>
+                          <li>Personal control panel for data management</li>
+                          <li>JSON format for technical users</li>
+                        </ul>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={6}>
+                    <Card className="mb-3 h-100">
+                      <Card.Body>
+                        <h4>⚙️ User Control</h4>
+                        <ul>
+                          <li>Personal control panel for account management</li>
+                          <li>Customizable export options</li>
+                          <li>Privacy and data control settings</li>
+                          <li>Mobile-optimized navigation</li>
                         </ul>
                       </Card.Body>
                     </Card>
@@ -191,7 +217,7 @@ const AboutPage = () => {
                   <Col md={6}>
                     <h4>🏠 Homeowners</h4>
                     <ul>
-                      <li>Insurance documentation and claims</li>
+                      <li>Personal asset documentation and records</li>
                       <li>Moving and relocation planning</li>
                       <li>Estate planning and asset tracking</li>
                       <li>Warranty and maintenance tracking</li>
@@ -257,7 +283,17 @@ const AboutPage = () => {
                 <h2>📈 Version History</h2>
                 <div className="timeline">
                   <div className="mb-3">
-                    <Badge bg="primary">v1.3.0</Badge> <strong>Current Version</strong>
+                    <Badge bg="primary">v1.4.0</Badge> <strong>Current Version - Excel Export & User Control Panel</strong>
+                    <ul>
+                      <li>Excel export functionality with multi-sheet workbooks</li>
+                      <li>User control panel for personal data management</li>
+                      <li>Business-friendly spreadsheet exports with statistics</li>
+                      <li>Enhanced mobile navigation for better accessibility</li>
+                      <li>Comprehensive security audit and privacy compliance</li>
+                    </ul>
+                  </div>
+                  <div className="mb-3">
+                    <Badge bg="secondary">v1.3.0</Badge> <strong>Legal Compliance & Image Optimization</strong>
                     <ul>
                       <li>Comprehensive legal compliance pages (Terms, Privacy, Contact, About)</li>
                       <li>Image optimization system for performance improvement</li>

@@ -3,7 +3,9 @@ import { Card, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import { useAuthStore } from '../store/authStore';
 import { useNotifications } from './NotificationSystem';
 import { dataExportService } from '../services/dataExportService';
+import { excelExportService } from '../services/excelExportService';
 import type { ExportData, ImportResult } from '../services/dataExportService';
+import type { ExcelExportOptions } from '../services/excelExportService';
 
 const DataImportExport = () => {
   const [showImportModal, setShowImportModal] = useState(false);
@@ -14,6 +16,11 @@ const DataImportExport = () => {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [exportUserId, setExportUserId] = useState<string>('');
   const [importUserId, setImportUserId] = useState<string>('');
+  const [excelOptions, setExcelOptions] = useState<ExcelExportOptions>({
+    includeImages: false,
+    includeFinancials: true,
+    includeStatistics: true
+  });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
@@ -43,9 +50,33 @@ const DataImportExport = () => {
       : `hearth-full-export-${new Date().toISOString().split('T')[0]}.json`;
     
     dataExportService.downloadExportData(exportData, filename);
-    showSuccess('Export Complete', 'Data exported successfully!');
+    showSuccess('Export Complete', 'Data exported successfully as JSON!');
     setShowExportModal(false);
     setExportData(null);
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!exportData) return;
+
+    try {
+      setLoading(true);
+      await excelExportService.exportToExcel(exportData, excelOptions);
+      showSuccess('Export Complete', 'Data exported successfully as Excel spreadsheet!');
+      setShowExportModal(false);
+      setExportData(null);
+    } catch (error) {
+      console.error('Excel export error:', error);
+      showError('Export Failed', 'Failed to create Excel file. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcelOptionChange = (option: keyof ExcelExportOptions) => {
+    setExcelOptions(prev => ({
+      ...prev,
+      [option]: !prev[option]
+    }));
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +144,11 @@ const DataImportExport = () => {
   const resetExport = () => {
     setExportData(null);
     setExportUserId('');
+    setExcelOptions({
+      includeImages: false,
+      includeFinancials: true,
+      includeStatistics: true
+    });
   };
 
   return (
@@ -201,6 +237,45 @@ const DataImportExport = () => {
                   <strong>Version:</strong> {exportData.exportInfo.version}
                 </small>
               </Alert>
+
+              {/* Excel Export Options */}
+              <div className="mb-3">
+                <h6>📊 Excel Export Options</h6>
+                <div className="border rounded p-3 bg-light">
+                  <div className="row">
+                    <div className="col-md-4">
+                      <Form.Check
+                        type="checkbox"
+                        id="admin-includeFinancials"
+                        label="Include Financial Data"
+                        checked={excelOptions.includeFinancials}
+                        onChange={() => handleExcelOptionChange('includeFinancials')}
+                      />
+                      <small className="text-muted">Purchase prices, dates, warranty info</small>
+                    </div>
+                    <div className="col-md-4">
+                      <Form.Check
+                        type="checkbox"
+                        id="admin-includeStatistics"
+                        label="Include Statistics"
+                        checked={excelOptions.includeStatistics}
+                        onChange={() => handleExcelOptionChange('includeStatistics')}
+                      />
+                      <small className="text-muted">Summary calculations and analytics</small>
+                    </div>
+                    <div className="col-md-4">
+                      <Form.Check
+                        type="checkbox"
+                        id="admin-includeImages"
+                        label="Include Image Status"
+                        checked={excelOptions.includeImages}
+                        onChange={() => handleExcelOptionChange('includeImages')}
+                      />
+                      <small className="text-muted">Whether items have photos</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </Modal.Body>
@@ -213,9 +288,25 @@ const DataImportExport = () => {
               {loading ? 'Exporting...' : 'Generate Export'}
             </Button>
           ) : (
-            <Button variant="success" onClick={handleDownloadExport}>
-              📥 Download JSON File
-            </Button>
+            <div className="d-flex gap-2">
+              <Button 
+                variant="success" 
+                onClick={handleDownloadExcel}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Creating Excel...
+                  </>
+                ) : (
+                  '📊 Download Excel'
+                )}
+              </Button>
+              <Button variant="outline-primary" onClick={handleDownloadExport}>
+                📄 Download JSON
+              </Button>
+            </div>
           )}
         </Modal.Footer>
       </Modal>

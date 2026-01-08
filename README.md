@@ -21,6 +21,8 @@ Hearth is a comprehensive home inventory management system that helps you catalo
 - **📱 QR Code Integration** - Generate and print QR codes for physical containers
 - **🔍 Advanced Search** - Find items quickly across your entire inventory
 - **📊 Value Tracking** - Monitor purchase prices and current values
+- **📈 Excel Export** - Export inventory data to business-friendly spreadsheets
+- **⚙️ User Control Panel** - Personal data management and export tools
 - **🌙 Dark Mode** - Beautiful light and dark themes
 - **📱 PWA Support** - Install as a native app with offline functionality
 - **🔐 User Management** - Secure user approval system with admin controls
@@ -52,6 +54,7 @@ Visit the live application at: **[https://hearth.keg.dev](https://hearth.keg.dev
 - **Zustand 5.0.9** - Lightweight, performant state management
 - **QRCode.react 4.2.0** - QR code generation for containers and items
 - **Browser Image Compression 2.0.2** - Client-side image optimization
+- **XLSX 0.18.5** - Excel spreadsheet generation for data export
 
 ### **Development & Testing**
 - **Jest 30.2.0** - Comprehensive testing framework
@@ -89,6 +92,8 @@ hearth/
 - **authService** - User authentication and session management
 - **containerService** - Container CRUD operations
 - **itemService** - Item management with image handling
+- **dataExportService** - JSON data export functionality
+- **excelExportService** - Excel spreadsheet generation
 - **userRegistrationService** - User approval workflow
 - **emailNotificationService** - Admin notification system
 

@@ -32,6 +32,10 @@ const AppNavbar = () => {
               <>
                 <Nav.Link as={Link} to="/containers">Containers</Nav.Link>
                 <Nav.Link as={Link} to="/items">Items</Nav.Link>
+                {/* Mobile-friendly Control Panel - show directly in nav on mobile */}
+                <Nav.Link as={Link} to="/control-panel" className="d-lg-none">
+                  ⚙️ Control Panel
+                </Nav.Link>
               </>
             )}
             <NavDropdown title="About" id="about-nav-dropdown">
@@ -44,6 +48,12 @@ const AppNavbar = () => {
             {user && user.email === import.meta.env.VITE_ADMIN_EMAIL && (
               <Nav.Link as={Link} to="/admin" className="text-warning fw-bold">
                 🛡️ Admin
+              </Nav.Link>
+            )}
+            {/* Mobile-friendly Logout - show directly in nav on mobile */}
+            {user && (
+              <Nav.Link onClick={handleLogout} className="d-lg-none text-danger">
+                🚪 Logout
               </Nav.Link>
             )}
           </Nav>
@@ -75,22 +85,28 @@ const AppNavbar = () => {
                   >
                     {isDarkMode ? "☀️" : "🌙"}
                   </Button>
+                  {/* Desktop-only user dropdown */}
+                  <NavDropdown 
+                    title="🧑" 
+                    id="user-nav-dropdown"
+                    className="d-none d-lg-flex align-items-center"
+                  >
+                    <NavDropdown.Item as={Link} to="/control-panel">
+                      ⚙️ Control Panel
+                    </NavDropdown.Item>
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item onClick={handleLogout}>
+                      🚪 Logout
+                    </NavDropdown.Item>
+                  </NavDropdown>
+                  {/* Mobile-only user indicator */}
                   <div 
-                    className="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center"
-                    style={{ 
-                      cursor: 'default'
-                    }}
+                    className="d-lg-none btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center"
+                    style={{ cursor: 'default' }}
                     title={`Logged in as: ${user.email}`}
                   >
                     🧑
                   </div>
-                  <Button 
-                    variant={isDarkMode ? "outline-light" : "outline-dark"} 
-                    size="sm" 
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </Button>
                 </div>
               ) : (
                 <Nav.Link as={Link} to="/login">Login</Nav.Link>

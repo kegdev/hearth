@@ -28,7 +28,7 @@
 - **Data Intelligence** - Analytics, reporting, predictive insights
 
 #### Secondary Goals
-- **Third-Party Integrations** - Insurance, marketplace, smart home connections
+- **Third-Party Integrations** - Business services, marketplace, smart home connections
 - **Advanced Search** - Natural language queries, visual search, recommendation engine
 - **Automation** - Smart rules, scheduled tasks, maintenance reminders
 - **Accessibility** - Enhanced WCAG compliance, voice control, screen reader optimization
@@ -54,7 +54,7 @@
 #### Value Estimation
 - **Market price** lookup integration with eBay, Amazon APIs
 - **Depreciation modeling** based on item age and condition
-- **Insurance valuation** reports with professional formatting
+- **Professional valuation** reports with business formatting
 - **Price trend** analysis and alerts
 
 #### Smart Recommendations
@@ -170,7 +170,7 @@
 - **Integration** with IFTTT and Zapier
 
 #### Reporting System
-- **Insurance reports** with professional formatting
+- **Professional reports** with business formatting
 - **Tax documentation** for business inventory
 - **Maintenance schedules** with automated reminders
 - **Custom dashboards** with drag-and-drop widgets
@@ -243,7 +243,7 @@
 
 ### Ecosystem Integration
 - **Smart Home** integration with IoT devices
-- **Insurance** partnerships for automatic coverage
+- **Business** partnerships for professional services
 - **Marketplace** integration for buying/selling
 - **Professional Services** for appraisals and organization
 

@@ -308,7 +308,7 @@ Track the financial value of your items.
 - **Purchase Price** - Record what you paid for items
 - **Current Value** - Update current market value
 - **Value Trends** - See how item values change over time
-- **Insurance Documentation** - Use for insurance claims
+- **Asset Documentation** - Use for personal records and documentation
 
 ### Bulk Operations
 Efficiently manage multiple items at once.
@@ -358,7 +358,7 @@ Efficiently manage multiple items at once.
 
 ### Integration Ideas
 - **Moving Preparation** - Use Hearth to organize and track boxes when moving
-- **Insurance Documentation** - Maintain detailed records for insurance purposes
+- **Asset Documentation** - Maintain detailed records for personal and professional purposes
 - **Estate Planning** - Document valuable items for estate planning
 - **Lending Tracking** - Keep track of items you've lent to others
 - **Seasonal Organization** - Organize seasonal items and decorations
