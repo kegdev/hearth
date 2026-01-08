@@ -29,7 +29,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h5>📦 Organize</h5>
+                <h2 className="h5 mb-3">📦 Organize</h2>
                 <p>Create containers and categorize your items for easy management.</p>
               </Card.Body>
             </Card>
@@ -37,7 +37,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h5>📱 QR Codes</h5>
+                <h2 className="h5 mb-3">📱 QR Codes</h2>
                 <p>Generate QR codes for instant access to item information.</p>
               </Card.Body>
             </Card>
@@ -45,7 +45,7 @@ const HomePage = () => {
           <Col md={4} className="mb-4">
             <Card className="h-100 text-center">
               <Card.Body>
-                <h5>🔒 Private</h5>
+                <h2 className="h5 mb-3">🔒 Private</h2>
                 <p>Your inventory data is secure and only accessible to you.</p>
               </Card.Body>
             </Card>
@@ -68,7 +68,7 @@ const HomePage = () => {
         <Col md={6} className="mb-3">
           <Card>
             <Card.Body>
-              <Card.Title>📦 Containers</Card.Title>
+              <Card.Title className="h5 mb-3">📦 Containers</Card.Title>
               <Card.Text>
                 Manage your storage containers and organize your space.
               </Card.Text>
@@ -81,7 +81,7 @@ const HomePage = () => {
         <Col md={6} className="mb-3">
           <Card>
             <Card.Body>
-              <Card.Title>📋 Items</Card.Title>
+              <Card.Title className="h5 mb-3">📋 Items</Card.Title>
               <Card.Text>
                 Browse and manage all your cataloged items.
               </Card.Text>

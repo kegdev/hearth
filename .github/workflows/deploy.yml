@@ -3,8 +3,16 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '.ai/**'
+      - '*.md'
+      - 'README.md'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '.ai/**'
+      - '*.md'
+      - 'README.md'
 
 # Add permissions for GitHub Pages deployment
 permissions:

@@ -134,19 +134,19 @@ const SearchResultsPage = () => {
           {/* Results Summary */}
           {hasSearched && !loading && (
             <div className="mb-4">
-              <h5>
+              <h2>
                 {getTotalResults() > 0 
                   ? `Found ${getTotalResults()} result${getTotalResults() !== 1 ? 's' : ''} for "${searchParams.get('q')}"`
                   : `No results found for "${searchParams.get('q')}"`
                 }
-              </h5>
+              </h2>
             </div>
           )}
 
           {/* Container Results */}
           {results.containers.length > 0 && (
             <div className="mb-5">
-              <h4 className="mb-3">📦 Containers ({results.containers.length})</h4>
+              <h3 className="mb-3">📦 Containers ({results.containers.length})</h3>
               <Row>
                 {results.containers.map((container) => (
                   <Col md={6} lg={4} key={container.id} className="mb-3">
@@ -194,9 +194,9 @@ const SearchResultsPage = () => {
           {/* Item Results Grouped by Container */}
           {Object.keys(results.itemsByContainer).length > 0 && (
             <div className="mb-5">
-              <h4 className="mb-3">
+              <h3 className="mb-3">
                 📋 Items ({Object.values(results.itemsByContainer).reduce((total, group) => total + group.items.length, 0)})
-              </h4>
+              </h3>
               
               {Object.entries(results.itemsByContainer).map(([containerId, group]) => (
                 <div key={containerId} className="mb-4">
@@ -268,7 +268,7 @@ const SearchResultsPage = () => {
               <div className="mb-4">
                 <i className="bi bi-search display-1 text-muted"></i>
               </div>
-              <h4>No results found</h4>
+              <h3>No results found</h3>
               <p className="text-muted mb-4">
                 We couldn't find any containers or items matching "{searchParams.get('q')}"
               </p>
@@ -290,7 +290,7 @@ const SearchResultsPage = () => {
               <div className="mb-4">
                 <i className="bi bi-search display-1 text-muted"></i>
               </div>
-              <h4>Search Your Inventory</h4>
+              <h3>Search Your Inventory</h3>
               <p className="text-muted">
                 Find containers and items across your entire inventory, including shared containers.
               </p>

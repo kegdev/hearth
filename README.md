@@ -7,6 +7,7 @@ A modern Progressive Web Application for organizing and managing your home inven
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 ![Firebase](https://img.shields.io/badge/Firebase-12.6.0-orange)
 ![PWA](https://img.shields.io/badge/PWA-Enabled-purple)
+![OAuth Verified](https://img.shields.io/badge/Google%20OAuth-Verified-green)
 
 ## 🎯 Overview
 
@@ -32,6 +33,11 @@ Hearth is a comprehensive home inventory management system that helps you catalo
 Visit the live application at: **[https://hearth.keg.dev](https://hearth.keg.dev)**
 
 *Note: New users require admin approval for access.*
+
+### 📋 Legal & Privacy
+- **[Privacy Policy](https://hearth.keg.dev/privacy-policy)** - Comprehensive data handling and Google OAuth compliance
+- **[Terms of Service](https://hearth.keg.dev/terms-of-service)** - User agreement and service terms
+- **[Contact](https://hearth.keg.dev/contact)** - Support and contact information
 
 ## 🛠️ Technology Stack
 
@@ -169,6 +175,13 @@ npm run test:ci      # CI-friendly test run
 
 ## 🔐 Security & User Management
 
+### **Data Privacy & Protection**
+- **Minimal Data Collection** - Only collects data necessary for inventory management
+- **Google OAuth Compliance** - Follows Google API Services User Data Policy
+- **No Advertising** - User data never used for advertising or marketing
+- **User Control** - Complete control over data with export and deletion options
+- **Transparent Practices** - Clear privacy policy explaining all data handling
+
 ### **User Approval System**
 - **Registration Requests** - Users submit access requests
 - **Admin Dashboard** - Centralized user management interface
@@ -181,6 +194,14 @@ npm run test:ci      # CI-friendly test run
 - **Input Validation** - Client and server-side validation
 - **XSS Protection** - Content Security Policy implementation
 - **HTTPS Enforcement** - Secure communication only
+
+### **Google OAuth Integration**
+- **Limited Scope Access** - Only requests essential scopes (openid, email, profile)
+- **Google API Services Compliance** - Adheres to Google API Services User Data Policy
+- **OAuth Dev Verification** - ✅ Approved by Google for brand verification (Project ID: hearth-db)
+- **No Data Sharing** - Google user data never shared with third parties
+- **Secure Storage** - All user data encrypted and stored securely via Firebase
+- **User Control** - Users can revoke access through Google Account settings
 
 ## 📱 Progressive Web App
 
