@@ -243,6 +243,9 @@ export const updateContainer = async (
     if (data.location !== undefined) updateData.location = data.location || null;
     
     await updateDoc(containerRef, updateData);
+    
+    // Clear containers cache since we updated a container
+    offlineCacheService.clearContainersCache();
   } catch (error) {
     console.error('Error updating container:', error);
     throw new Error('Failed to update container');
