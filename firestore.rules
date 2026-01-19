@@ -372,6 +372,189 @@ service cloud.firestore {
       allow list: if false;
     }
     
+    // Caravan Collections
+    
+    // Events collection (conventions, trade shows, etc.)
+    match /events/{eventId} {
+      // Users can read and list their own events
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create events for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['name', 'userId', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0 &&
+                       request.resource.data.name.size() <= 100 &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       // Optional fields validation
+                       (!request.resource.data.keys().hasAny(['description']) || 
+                        request.resource.data.description == null || 
+                        (request.resource.data.description is string && request.resource.data.description.size() <= 500)) &&
+                       (!request.resource.data.keys().hasAny(['startDate']) || 
+                        request.resource.data.startDate == null || request.resource.data.startDate is timestamp) &&
+                       (!request.resource.data.keys().hasAny(['endDate']) || 
+                        request.resource.data.endDate == null || request.resource.data.endDate is timestamp) &&
+                       (!request.resource.data.keys().hasAny(['location']) || 
+                        request.resource.data.location == null || 
+                        (request.resource.data.location is string && request.resource.data.location.size() <= 200)) &&
+                       (!request.resource.data.keys().hasAny(['status']) || 
+                        request.resource.data.status in ['upcoming', 'active', 'completed', 'archived']);
+      
+      // Users can update their own events
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Users can delete their own events
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Locations collection (permanent venues, booths, etc.)
+    match /locations/{locationId} {
+      // Users can read and list their own locations
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create locations for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['name', 'userId', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0 &&
+                       request.resource.data.name.size() <= 100 &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       // Optional fields validation
+                       (!request.resource.data.keys().hasAny(['address']) || 
+                        request.resource.data.address == null || 
+                        (request.resource.data.address is string && request.resource.data.address.size() <= 300)) &&
+                       (!request.resource.data.keys().hasAny(['description']) || 
+                        request.resource.data.description == null || 
+                        (request.resource.data.description is string && request.resource.data.description.size() <= 500)) &&
+                       (!request.resource.data.keys().hasAny(['operationalHours']) || 
+                        request.resource.data.operationalHours == null || 
+                        (request.resource.data.operationalHours is string && request.resource.data.operationalHours.size() <= 200)) &&
+                       (!request.resource.data.keys().hasAny(['contactInfo']) || 
+                        request.resource.data.contactInfo == null || 
+                        (request.resource.data.contactInfo is string && request.resource.data.contactInfo.size() <= 200)) &&
+                       (!request.resource.data.keys().hasAny(['status']) || 
+                        request.resource.data.status in ['active', 'inactive', 'archived']);
+      
+      // Users can update their own locations
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Users can delete their own locations
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Sales collection (completed transactions)
+    match /sales/{saleId} {
+      // Users can read and list their own sales
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create sales for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['itemId', 'itemName', 'askingPrice', 'salePrice', 'profit', 'entityType', 'entityId', 'entityName', 'timestamp', 'userId', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.itemId is string &&
+                       request.resource.data.itemName is string &&
+                       request.resource.data.askingPrice is number &&
+                       request.resource.data.salePrice is number &&
+                       request.resource.data.profit is number &&
+                       request.resource.data.entityType in ['event', 'location'] &&
+                       request.resource.data.entityId is string &&
+                       request.resource.data.entityName is string &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.timestamp is timestamp &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       // Optional sync status field
+                       (!request.resource.data.keys().hasAny(['syncStatus']) || 
+                        request.resource.data.syncStatus in ['pending', 'synced', 'failed']);
+      
+      // Sales are mostly immutable once created (only allow sync status updates)
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.itemId == resource.data.itemId &&
+                       request.resource.data.timestamp == resource.data.timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Users can delete their own sales (for corrections)
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Assignments collection (item/container assignments to events/locations)
+    match /assignments/{assignmentId} {
+      // Users can read and list their own assignments
+      allow read, list: if isOwner(resource.data.userId);
+      
+      // Users can create assignments for themselves
+      allow create: if isOwner(request.resource.data.userId) && 
+                       request.resource.data.keys().hasAll(['entityType', 'entityId', 'itemType', 'itemId', 'userId', 'assignedAt', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.entityType in ['event', 'location'] &&
+                       request.resource.data.entityId is string &&
+                       request.resource.data.itemType in ['container', 'item'] &&
+                       request.resource.data.itemId is string &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.assignedAt is timestamp &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Users can update their own assignments
+      allow update: if isOwner(resource.data.userId) && 
+                       isOwner(request.resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.createdAt == resource.data.createdAt &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Users can delete their own assignments
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Caravan Permissions collection (access control for Caravan functionality)
+    match /permissions/{permissionId} {
+      // Users can read permissions they own or that involve them
+      allow read: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.grantedToId == request.auth.uid
+      );
+      
+      // Users can list permissions they're involved in
+      allow list: if isAuthenticated();
+      
+      // Only inventory owners can create permissions
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['ownerId', 'grantedToId', 'grantedToEmail', 'level', 'grantedAt', 'status', 'createdAt', 'updatedAt']) &&
+                       request.resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.level in ['view', 'sales', 'manage'] &&
+                       request.resource.data.grantedToId is string &&
+                       request.resource.data.grantedToEmail is string &&
+                       request.resource.data.grantedAt is timestamp &&
+                       request.resource.data.status in ['active', 'revoked'] &&
+                       request.resource.data.createdAt is timestamp &&
+                       request.resource.data.updatedAt is timestamp &&
+                       // Optional revoked date
+                       (!request.resource.data.keys().hasAny(['revokedAt']) || 
+                        request.resource.data.revokedAt == null || request.resource.data.revokedAt is timestamp);
+      
+      // Only inventory owners can update permissions (change levels, revoke)
+      allow update: if isAuthenticated() &&
+                       resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.ownerId == resource.data.ownerId &&
+                       request.resource.data.grantedToId == resource.data.grantedToId &&
+                       request.resource.data.createdAt == resource.data.createdAt &&
+                       request.resource.data.updatedAt is timestamp;
+      
+      // Only inventory owners can delete permissions
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
